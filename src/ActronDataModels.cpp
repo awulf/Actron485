@@ -1,6 +1,7 @@
 #include "ActronDataModels.h"
 #include "Utilities.h"
 
+///////////////////////////////////
 // ActronZoneToMasterMessage
 
 void ActronZoneToMasterMessage::printToSerial() {
@@ -74,9 +75,6 @@ void ActronZoneToMasterMessage::parse(uint8_t data[5]) {
         int16_t rawTempValue = (((negative ? 0b11111100 : 0x0) | leadingBites) << 8) | (uint16_t)data[3];
         int16_t rawTemp = rawTempValue + (negative ? 512 : -512); // A 512 offset
 
-        Serial.print(" Raw In: ");
-        Serial.print(rawTempValue);
-
         temperaturePreAdjustment = (250 - rawTemp) * 0.1;
         temperature = zoneTempFromMaster(rawTemp);
     }
@@ -93,9 +91,6 @@ void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
         int16_t rawTemp = zoneTempToMaster(temperature);
         int16_t rawTempValue = rawTemp - (rawTemp < 0 ? -512 : 512);
 
-        Serial.print(" Raw Out: ");
-        Serial.print(rawTempValue);
-
         // Byte 3
         data[2] = (mode != off ? 0b10000000 : 0b0) | (mode == open ? 0b01000000 : 0b0) | (rawTempValue >> 8 & 0b00000011);
 
@@ -103,11 +98,7 @@ void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
         data[3] = (uint8_t)rawTempValue;
 
         // Byte 5, check/verify byte
-        double sensorTemp = (250 - rawTemp) * 0.1; // Before master temp interpretation trickery
-        const int c = -192;
-        int8_t extraByte = data[2] & 0b11111101;
-        int8_t checkByte = ((int8_t)(sensorTemp * 10) - (int8_t)(setpoint * 2)) + c + extraByte + (mode == open ? 128 : 0);
-        data[4] = checkByte;
+        data[4] = data[2] - (data[2] << 1) - data[3] - data[1] - data[0] - 1;
 
     } else if (type == config) {
         // Byte 3, config bit set to 1
@@ -117,8 +108,7 @@ void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
         data[3] = (int8_t) (temperature * 10);
 
         // Byte 5, check/verify byte
-        int8_t checkByte = data[2] - data[3] - data[1] - 4;
-        data[4] = checkByte;
+        data[4] = data[2] - data[3] - data[1] - (data[0] & 0b1111) - 1;
     }
 }
 
@@ -149,4 +139,57 @@ int16_t ActronZoneToMasterMessage::zoneTempToMaster(double temperature) {
         out = (int16_t) round(250 - temperature * 10);
     }
     return out;
+}
+
+///////////////////////////////////
+// ActronMasterToZoneMessage
+
+void ActronMasterToZoneMessage::printToSerial() {
+}
+
+void ActronMasterToZoneMessage::parse(uint8_t data[7]) {
+    zone;
+
+    temperature;
+
+    minSetpoint;
+
+    maxSetpoint;
+
+    setPoint;
+
+    on;
+
+    fanMode;
+
+    compressorActive;
+
+    damperPosition;
+
+}
+
+void ActronMasterToZoneMessage::generate(uint8_t data[7]) {
+    // int zone
+
+    // double temperature;
+
+    // double minSetpoint;
+
+
+    // double maxSetpoint;
+
+
+    // double setPoint;
+
+
+    // bool on;
+
+
+    // bool fanMode;
+
+
+    // bool compressorActive;
+
+
+    // uint8_t damperPosition;
 }

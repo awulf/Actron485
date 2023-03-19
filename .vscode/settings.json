@@ -3,6 +3,7 @@
         "cmath": "cpp",
         "array": "cpp",
         "string": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "algorithm": "cpp"
     }
 }

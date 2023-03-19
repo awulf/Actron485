@@ -53,7 +53,7 @@ void decodeMasterToZone() {
   }
 
   if (zone != 3) {
-    return;
+    // return;
   }
   uint16_t zoneTempRaw =  (uint16_t) serialBuffer[1] | ((uint16_t) (serialBuffer[2] & 0b1) << 8);
   double zoneTemp = zoneTempRaw * 0.1;
@@ -66,6 +66,7 @@ void decodeMasterToZone() {
   bool fanMode = (serialBuffer[4] & 0x80) == 0x80;
   bool zoneActive = (serialBuffer[5] & 0x80) == 0x80;
   
+  uint8_t checkByte = serialBuffer[2] - (serialBuffer[2] << 1) - serialBuffer[5] - serialBuffer[4] - serialBuffer[3] - serialBuffer[1] - serialBuffer[0] - 1;
   // buffer[6] no idea
 
   // Print Details
@@ -112,74 +113,17 @@ void decodeMasterToZone() {
 
   Serial.print(", ???: ");
 
+   printBinaryByte(checkByte);
+
   Serial.println();
 }
 
-// Given the raw encoded value converts to °C as master would interpet
-double zoneTempFromMaster(int16_t rawValue) {
-  double temp;
-  double out = 0;
-  if (rawValue < -58) {
-    // Temp High (above 30.8°C)
-    out = 0.00007124*pow(rawValue, 2) - 0.1052*rawValue+24.5;
-    temp = round(out * 10) / 10.0;
-  } else if (rawValue > 81) {
-    // Low Temp  (below 16.9°C)
-    out = (-0.00001457*pow(rawValue, 2) - 0.0988*rawValue+24.923);
-    temp = round(out * 10) / 10.0;
-  } else {
-    temp = (250 - rawValue) * 0.1;
-  }  
-  return temp;
-}
-
-// Given the the temperature returns the encoded value for master controller
-int16_t zoneTempToMaster(double temperature) {
-    int16_t out = 0;
-    if (temperature > 30.8) {
-        out = (int16_t) round(-118.478*(sqrt(14.3372 + temperature)-6.23195));
-    } else if (temperature < 16.9) {
-        out = (int16_t) round(261.981*(sqrt(192.415 - temperature)-12.9419));
-    } else {
-        out = (int16_t) round(250 - temperature * 10);
-    }
-    return out;
-}
-
 void decodeZoneToMaster() {
-  uint8_t zone = serialBuffer[0] & 0b00001111;
-  double zoneSetTemp = serialBuffer[1] / 2.0;
-  bool on = (serialBuffer[2] & 0b10000000) == 0b10000000;
-  bool openMode = (serialBuffer[2] & 0b01000000) == 0b01000000;
+    // Try with the new struct
+  ActronZoneToMasterMessage zoneMessage = ActronZoneToMasterMessage();
+  zoneMessage.parse(serialBuffer);
 
-
-  // Two last bits of byte[2] are the leading bits for the raw temperature value
-  uint8_t leadingBites = serialBuffer[2] & 0b00000011;
-  uint8_t negative = (leadingBites & 0b10) == 0b10;
-
-  int16_t rawTempValue = (((negative ? 0b11111100 : 0x0) | leadingBites) << 8) | (uint16_t)serialBuffer[3];
-  int16_t rawTemp = rawTempValue + (negative ? 512 : -512); // A 512 offset
-
-  // uint8_t oldLeading = serialBuffer[2] & 0b00000001;
-  // int16_t oldRawTemp = (((!prepend ? 0b11111111 : 0x0)) << 8) | (uint16_t)serialBuffer[3];
-  // double oldTemp = (250 - oldRawTemp) * 0.1;
-
-  double zoneTemp;
-  double sensorTemp = (250 - rawTemp) * 0.1;
-  if (rawTemp < -58) {
-    // Temp High (above 30.8°C)
-    double out = 0.00007124*pow(rawTemp, 2) - 0.1052*rawTemp+24.5;
-    zoneTemp = round(out * 10) / 10.0;
-  } else if (rawTemp > 81) {
-    // Low Temp  (below 16.9°C)
-    double out = (-0.00001457*pow(rawTemp, 2) - 0.0988*rawTemp+24.923);
-    zoneTemp = round(out * 10) / 10.0;
-  } else {
-    zoneTemp = (250 - rawTemp) * 0.1;
-  }  
-
-  // Print Details
-    if (zone != 3) {
+  if (zoneMessage.zone != 3) {
     return;
   }
 
@@ -198,79 +142,17 @@ void decodeZoneToMaster() {
     return;
   }
 
-  // printBinaryByte(rawTemp >> 8);
-  // Serial.print(" ");
-  // printBinaryByte(rawTemp);
-  // Serial.print(", raw ");
-  // Serial.print(rawTemp);
-  // Serial.print(", old raw ");
-  // Serial.print(oldRawTemp);
-  // Serial.print(", old temp: ");
-  // Serial.print(oldTemp);
-  // Serial.println();
+    uint8_t newData[5];
+    zoneMessage.generate(newData);
 
-  Serial.print("Z: ");
-
-  // Hex
-  for (int i=0; i<count; i++) {
-    printByte(serialBuffer[i]);
-  }
-
-
-  Serial.println();
-
-  // Test Check Byte encoding
-  const int x = -192;
-  // int8_t extraByte = (on ? 0b10000000 : 0b0) | (openMode ? 0b01000000 : 0b0) | ((rawTempValue >> 8) & 0b00000001);
-  //int8_t checkByte = ((int8_t)(sensorTemp * 10) - (int8_t)(zoneSetTemp * 2)) + x + extraByte + (openMode ? 128 : 0);
-  int8_t checkByte = serialBuffer[2] - (serialBuffer[2] << 1) - serialBuffer[3] - serialBuffer[1] + 60;
-
-  Serial.print("[");
-  printBinaryByte(checkByte);
-  Serial.print("]");
-  Serial.print((int8_t)(serialBuffer[4]-checkByte));
-
-    // Try with the new struct
-  ActronZoneToMasterMessage zoneMessage = ActronZoneToMasterMessage();
-  zoneMessage.parse(serialBuffer);
-
-  uint8_t newData[5];
-  zoneMessage.generate(newData);
-
-  // Decoded
-  Serial.println();
-  Serial.print("Zone: ");
-  Serial.print(zone);
-
-  Serial.print(", Set Point: ");
-  Serial.print(zoneSetTemp);
-
-  Serial.print(", Temp: ");
-  Serial.print(zoneTemp);
-
-  Serial.print("(Pre:");
-  Serial.print(sensorTemp);
-  Serial.print(")");
-
-  Serial.print(", Mode: ");
-  Serial.print(on ? (openMode ? "Open" : "Auto") : "Off");
-
-  Serial.println();
-
-  zoneMessage.printToSerial();
+    zoneMessage.printToSerial();
 
     // Binary
-  for (int i=0; i<count; i++) {
-    printBinaryByte(serialBuffer[i]);
-    Serial.print("  ");
-  }
-   Serial.println();
-  for (int i=0; i<5; i++) {
-    printBinaryByte(newData[i]);
-    Serial.print("  ");
-  }
-  Serial.println();
-   Serial.println();
+    printBinaryBytes(serialBuffer, count);
+    Serial.println();
+    printBinaryBytes(newData, count);
+    Serial.println();
+    Serial.println();
 }
 
 bool zoneDecode() {
@@ -279,7 +161,7 @@ bool zoneDecode() {
   uint8_t byte = serialBuffer[0];
   if (serialBufferIndex == 7 && (byte & 0b11110000) == 0x80) {
     // Master -> Zone Wall
-    //decodeMasterToZone();
+    decodeMasterToZone();
     return true;
   } else if (serialBufferIndex == 5 && (byte & 0b11110000) == 0xC0) {
     // Zone Wall -> Master
