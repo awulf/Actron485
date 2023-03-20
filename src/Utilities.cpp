@@ -31,3 +31,12 @@ void printBinaryBytes(uint8_t bytes[], uint8_t length) {
         Serial.print("  ");
     }
 }
+
+bool bytesEqual(uint8_t lhs[], uint8_t rhs[], uint8_t length) {
+    for (int i=0; i<length; i++) {
+        if (lhs[i] != rhs[i]) {
+            return false;
+        }
+    }
+    return true;
+}

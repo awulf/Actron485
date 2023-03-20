@@ -64,7 +64,10 @@ struct ActronMasterToZoneMessage {
     double maxSetpoint;
 
     // Set point of the zone, range 16 -> 30°C
-    double setPoint;
+    double setpoint;
+
+    // AC is in compressor mode (e.g. heating or cooling)
+    bool compressorMode;
 
     // Zone is on or off
     bool on;
@@ -72,7 +75,7 @@ struct ActronMasterToZoneMessage {
     // Zone is in fan only mode
     bool fanMode;
 
-    // Zone is being actively serviced by the compressor
+    // Zone is being actively serviced by the compressor / zone requesting compressor
     bool compressorActive;
 
     // Position of the damper from 0 -> 5 (closed -> open)

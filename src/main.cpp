@@ -44,115 +44,55 @@ void sendData() {
 long endReceive = 0;
 
 void decodeMasterToZone() {
-  int count = 7;
+    ActronMasterToZoneMessage message = ActronMasterToZoneMessage();
+    message.parse(serialBuffer);
 
-  uint8_t zone = serialBuffer[0] & 0b00001111;
-  
-  if (zone == 3) {
-    // sendData();
-  }
+    uint8_t newData[7];
+    message.generate(newData);
 
-  if (zone != 3) {
-    // return;
-  }
-  uint16_t zoneTempRaw =  (uint16_t) serialBuffer[1] | ((uint16_t) (serialBuffer[2] & 0b1) << 8);
-  double zoneTemp = zoneTempRaw * 0.1;
-  // Zone stats ? buffer[offset-2] & 0b11111110
-  double zoneMinTemp = serialBuffer[3] / 2.0;
-  double zoneSetTemp = (serialBuffer[4] & 0b00111111) / 2.0;
-  double zoneMaxTemp = (serialBuffer[5] & 0b00111111) / 2.0;
+    if (!bytesEqual(serialBuffer, newData, 7)) {
+      Serial.println("Error! Byte Miss Match!");
+      message.printToSerial();
+      Serial.println();
 
-  bool zoneOn = (serialBuffer[2] & 0b01000000) == 0b01000000;
-  bool fanMode = (serialBuffer[4] & 0x80) == 0x80;
-  bool zoneActive = (serialBuffer[5] & 0x80) == 0x80;
-  
-  uint8_t checkByte = serialBuffer[2] - (serialBuffer[2] << 1) - serialBuffer[5] - serialBuffer[4] - serialBuffer[3] - serialBuffer[1] - serialBuffer[0] - 1;
-  // buffer[6] no idea
-
-  // Print Details
-
-  Serial.print("M: ");
-  
-  // Hex
-  for (int i=0; i<count; i++) {
-    printByte(serialBuffer[i]);
-  }
-  
-  Serial.print("\t");
-
-  // // Binary
-  for (int i=0; i<count; i++) {
-    printBinaryByte(serialBuffer[i]);
-    Serial.print("  ");
-  }
-
-  // Decoded
-  Serial.print("\tZone ");
-  Serial.print(zone);
-
-  Serial.print(", Temp: ");
-  Serial.print(zoneTemp);
-
-  Serial.print(", SetTemp: ");
-  Serial.print(zoneSetTemp);
-
-  Serial.print(", MinSetTemp: ");
-  Serial.print(zoneMinTemp);
-
-  Serial.print(", MaxTemp: ");
-  Serial.print(zoneMaxTemp);
-
-  Serial.print(", On: ");
-  Serial.print(zoneOn ? "YES" : "NO");
-
-  Serial.print(", Active: ");
-  Serial.print(zoneActive ? "YES" : "NO");
-
-  Serial.print(", FanMode: ");
-  Serial.print(fanMode ? "YES" : "NO");
-
-  Serial.print(", ???: ");
-
-   printBinaryByte(checkByte);
-
-  Serial.println();
+      // Binary
+      printBinaryBytes(serialBuffer, 7);
+      Serial.println();
+      printBinaryBytes(newData, 7);
+      Serial.println();
+      Serial.println();
+    }
 }
 
 void decodeZoneToMaster() {
-    // Try with the new struct
-  ActronZoneToMasterMessage zoneMessage = ActronZoneToMasterMessage();
-  zoneMessage.parse(serialBuffer);
+    ActronZoneToMasterMessage message = ActronZoneToMasterMessage();
+    message.parse(serialBuffer);
 
-  if (zoneMessage.zone != 3) {
-    return;
-  }
-
-  // Check if changed
-  int count = 5;
-  bool same = true;
-  for (int i=0; i<count; i++) {
-    same = same && previousZonePacket[i] == serialBuffer[i];
-    if (!same) {
-      previousZonePacket[i] = serialBuffer[i];
-    }
-  }
-
-  if (same) {
-    // Only show differences
-    return;
-  }
+    // Check if changed
+    
+    // bool same = true;
+    // for (int i=0; i<count; i++) {
+    //   same = same && previousZonePacket[i] == serialBuffer[i];
+    //   if (!same) {
+    //     previousZonePacket[i] = serialBuffer[i];
+    //   }
+    // }
 
     uint8_t newData[5];
-    zoneMessage.generate(newData);
+    message.generate(newData);
 
-    zoneMessage.printToSerial();
+    if (!bytesEqual(serialBuffer, newData, 5)) {
+      Serial.println("Error! Byte Miss Match!");
+      message.printToSerial();
+      Serial.println();
 
-    // Binary
-    printBinaryBytes(serialBuffer, count);
-    Serial.println();
-    printBinaryBytes(newData, count);
-    Serial.println();
-    Serial.println();
+      // Binary
+      printBinaryBytes(serialBuffer, 5);
+      Serial.println();
+      printBinaryBytes(newData, 5);
+      Serial.println();
+      Serial.println();
+    }
 }
 
 bool zoneDecode() {

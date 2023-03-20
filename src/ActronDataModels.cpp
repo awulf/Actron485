@@ -7,7 +7,7 @@
 void ActronZoneToMasterMessage::printToSerial() {
 
     // Decoded
-    Serial.print("Zone: ");
+    Serial.print("C: Zone: ");
     Serial.print(zone);
 
     if (type == normal) {
@@ -38,8 +38,6 @@ void ActronZoneToMasterMessage::printToSerial() {
         Serial.print(", Temp Offset: ");
         Serial.print(temperature);
     }
-
-    Serial.println();
 }
 
 void ActronZoneToMasterMessage::parse(uint8_t data[5]) {
@@ -145,51 +143,83 @@ int16_t ActronZoneToMasterMessage::zoneTempToMaster(double temperature) {
 // ActronMasterToZoneMessage
 
 void ActronMasterToZoneMessage::printToSerial() {
+    Serial.print("M: Zone: ");
+    Serial.print(zone);
+
+    Serial.print(", Set Point: ");
+    Serial.print(setpoint);
+
+    Serial.print(", Temp: ");
+    Serial.print(temperature);
+
+    Serial.print(", SP Range: ");
+    Serial.print(minSetpoint);
+    Serial.print("-");
+    Serial.print(maxSetpoint);
+
+    Serial.print(", Compr. Mode: ");
+    Serial.print(compressorMode ? "On" : "Off");
+
+    Serial.print(", Zone: ");
+    Serial.print(on ? "On" : "Off");
+
+    if (on) {
+        if (fanMode) {
+            Serial.print(", Fan Mode");
+        } else if (compressorActive) {
+            Serial.print(", Compr. Active");
+        }
+    }
+
+    Serial.print(", Damper Pos: ");
+    Serial.print((int)damperPosition/5*100);
+    Serial.print("%");
 }
 
 void ActronMasterToZoneMessage::parse(uint8_t data[7]) {
-    zone;
+    zone = data[0] & 0b00001111;
 
-    temperature;
+    // Temperature bits: [23][08 - 15]
+    uint16_t zoneTempRaw = (uint16_t) data[1] | ((uint16_t) (data[2] & 0b1) << 8);
+    temperature = zoneTempRaw * 0.1;
 
-    minSetpoint;
+    minSetpoint = (data[3] & 0b00111111) / 2.0;
+    maxSetpoint = (data[5] & 0b00111111) / 2.0;
+    setpoint = (data[4] & 0b00111111) / 2.0;
 
-    maxSetpoint;
+    on = (data[2] & 0b01000000) == 0b01000000;
 
-    setPoint;
+    compressorMode = (data[2] & 0b10000000) == 0b10000000;
 
-    on;
+    fanMode = (data[4] & 0x80) == 0x80;
 
-    fanMode;
+    compressorActive = (data[5] & 0x80) == 0x80;
 
-    compressorActive;
-
-    damperPosition;
-
+    damperPosition = (data[2] & 0b00011100) >> 2;
 }
 
 void ActronMasterToZoneMessage::generate(uint8_t data[7]) {
-    // int zone
+    // Byte 1, Start nibble 8 and zone nibble
+    data[0] = 0b10000000 | zone;
 
-    // double temperature;
+    // Byte 2, lower part of zone temperature
+    uint16_t zoneTempRaw = temperature * 10;
+    data[1] = (uint8_t) zoneTempRaw;
 
-    // double minSetpoint;
+    // Byte 3, first bit ac in compressor mode, second zone on. third unknown, 4-6 damper pos, 7 unknown, 8 first bit for zone temp
+    data[2] = (compressorMode ? 0b10000000 : 0b0) | (on ? 0b01000000 : 0b0) | (/*Unknown*/0b0) | 
+              (0b00011100 & (damperPosition << 2)) | (/*Unknown*/0b0) | (0b00000001 & (zoneTempRaw >> 8));
+              // Bit 7 is probably for zone temperature, but we never see this range being used
 
+    // Byte 4, unknown top bits, min setpoint lower 6
+    data[3] = (/*Unknown*/0b0) | (/*Unknown*/0b0) | ((uint8_t)minSetpoint * 2) & 0b00111111;
 
-    // double maxSetpoint;
+    // Byte 5, first bit fan mode, second unknown, lower 6 setpoint
+    data[4] = (fanMode ? 0b10000000 : 0b0) | (/*Unknown*/0b0) | ((uint8_t)setpoint * 2) & 0b00111111;
 
+    // Byte 6, first bit compressor on for zone, second unknow, lower 6 max setpoint
+    data[5] = (fanMode ? 0b10000000 : 0b0) | (/*Unknown*/0b0) | ((uint8_t)maxSetpoint * 2) & 0b00111111;
 
-    // double setPoint;
-
-
-    // bool on;
-
-
-    // bool fanMode;
-
-
-    // bool compressorActive;
-
-
-    // uint8_t damperPosition;
+    // Byte 7, check byte
+    data[6] = data[2] - (data[2] << 1) - data[5] - data[4] - data[3] - data[1] - data[0] - 1;
 }
