@@ -14,7 +14,7 @@ const unsigned long serialBufferBreak = 5; // milliseconds
 uint8_t serialBufferIndex = 0;
 
 
-uint8_t previousZonePacket[5];
+uint8_t previousZonePacket[7];
 
 void serialWrite(bool enable) {
   if (enable) {
@@ -50,6 +50,20 @@ void decodeMasterToZone() {
     uint8_t newData[7];
     message.generate(newData);
 
+    // Check if changed
+    bool print = false;
+    if (message.zone == 3) {
+        bool same = true;
+        for (int i=0; i<7; i++) {
+          same = same && previousZonePacket[i] == serialBuffer[i];
+          if (!same) {
+            previousZonePacket[i] = serialBuffer[i];
+          }
+        }
+        print = !same;
+    }
+
+
     if (!bytesEqual(serialBuffer, newData, 7)) {
       Serial.println("Error! Byte Miss Match!");
       message.printToSerial();
@@ -61,22 +75,20 @@ void decodeMasterToZone() {
       printBinaryBytes(newData, 7);
       Serial.println();
       Serial.println();
+
+    } else if (print) {
+      message.printToSerial();
+      Serial.println();
+      printBinaryBytes(newData, 7);
+      Serial.println();
+      Serial.println();
+
     }
 }
 
 void decodeZoneToMaster() {
     ActronZoneToMasterMessage message = ActronZoneToMasterMessage();
     message.parse(serialBuffer);
-
-    // Check if changed
-    
-    // bool same = true;
-    // for (int i=0; i<count; i++) {
-    //   same = same && previousZonePacket[i] == serialBuffer[i];
-    //   if (!same) {
-    //     previousZonePacket[i] = serialBuffer[i];
-    //   }
-    // }
 
     uint8_t newData[5];
     message.generate(newData);

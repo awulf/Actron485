@@ -4,6 +4,8 @@
         "array": "cpp",
         "string": "cpp",
         "string_view": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "*.tcc": "cpp",
+        "fstream": "cpp"
     }
 }

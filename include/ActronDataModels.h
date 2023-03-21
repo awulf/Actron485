@@ -2,14 +2,15 @@
 #include <Arduino.h>
 
 enum ActronZoneMode {
-    off,
-    on,
-    open
+    actronZoneModeOff,
+    actronZoneModeOn,
+    actronZoneModeOpen
 };
 
 enum ActronZoneMessageType {
-    normal,
-    config
+    actronZoneMessageTypeNormal,
+    actronZoneMessageTypeConfig,
+    actronZoneMessageTypeInitZone
 };
 
 struct ActronZoneToMasterMessage {
@@ -50,6 +51,15 @@ struct ActronZoneToMasterMessage {
     int16_t zoneTempToMaster(double temperature);
 };
 
+enum ActronZoneOperationMode {
+    actronZoneOperationModeSystemOff,
+    actronZoneOperationModeZoneOff,
+    actronZoneOperationModeFanOnly,
+    actronZoneOperationModeStandby,
+    actronZoneOperationModeCooling,
+    actronZoneOperationModeHeating
+};
+
 struct ActronMasterToZoneMessage {
     // Zone number. 0 -> 8
     int zone;
@@ -75,11 +85,20 @@ struct ActronMasterToZoneMessage {
     // Zone is in fan only mode
     bool fanMode;
 
+    // Zone is heating
+    bool heating;
+
+    // A bit that turns 1 when sometimes turning off a zone or when all zones turn on for balancing
+    bool maybeTurningOff;
+
     // Zone is being actively serviced by the compressor / zone requesting compressor
     bool compressorActive;
 
     // Position of the damper from 0 -> 5 (closed -> open)
     uint8_t damperPosition;
+
+    // Interpreted from the provided data
+    ActronZoneOperationMode operationMode;
 
     /// @brief debug print state to serial
     void printToSerial();
