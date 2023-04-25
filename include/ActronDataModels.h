@@ -1,19 +1,42 @@
+// Actron RS485 messages
+
 #pragma once
 #include <Arduino.h>
 
-enum ActronZoneMode {
-    actronZoneModeOff,
-    actronZoneModeOn,
-    actronZoneModeOpen
+namespace Actron485 {
+
+// Message Type
+
+enum class MessageType: uint8_t {
+    Unknown = 0xFF,
+    Command = 0x30, // 0x3{command type}
+    ZoneWallController = 0xC0, // 0xC{zone}
+    ZoneMasterController = 0x80, // 0x8{zone}
+    MasterBoard = 0x01, // Assumed
+    OutdoorUnit = 0x02, // Assumed
+    Stat1 = 0xA0,
+    Stat2 = 0xFE,
+    Stat3 = 0xE0
 };
 
-enum ActronZoneMessageType {
-    actronZoneMessageTypeNormal,
-    actronZoneMessageTypeConfig,
-    actronZoneMessageTypeInitZone
+MessageType detectMessageType(uint8_t firstBit);
+
+// Zone Control Messages
+
+enum class ZoneMode {
+    Off,
+    On,
+    Open,
+    Ignore = -1 // Not part of the spec, used in thise code wheather to update
 };
 
-struct ActronZoneToMasterMessage {
+enum class ZoneMessageType {
+    Normal,
+    Config,
+    InitZone
+};
+
+struct ZoneToMasterMessage {
     // Zone number. 0 -> 8
     int zone;
     
@@ -28,10 +51,10 @@ struct ActronZoneToMasterMessage {
     double temperaturePreAdjustment;
     
     // Mode the zone is operating in
-    ActronZoneMode mode;
+    ZoneMode mode;
     
     // Controller Message type
-    ActronZoneMessageType type;
+    ZoneMessageType type;
 
     /// @brief debug print state to serial
     void printToSerial();
@@ -51,16 +74,16 @@ struct ActronZoneToMasterMessage {
     int16_t zoneTempToMaster(double temperature);
 };
 
-enum ActronZoneOperationMode {
-    actronZoneOperationModeSystemOff,
-    actronZoneOperationModeZoneOff,
-    actronZoneOperationModeFanOnly,
-    actronZoneOperationModeStandby,
-    actronZoneOperationModeCooling,
-    actronZoneOperationModeHeating
+enum class ZoneOperationMode {
+    SystemOff,
+    ZoneOff,
+    FanOnly,
+    Standby,
+    Cooling,
+    Heating
 };
 
-struct ActronMasterToZoneMessage {
+struct MasterToZoneMessage {
     // Zone number. 0 -> 8
     int zone;
 
@@ -98,7 +121,7 @@ struct ActronMasterToZoneMessage {
     uint8_t damperPosition;
 
     // Interpreted from the provided data
-    ActronZoneOperationMode operationMode;
+    ZoneOperationMode operationMode;
 
     /// @brief debug print state to serial
     void printToSerial();
@@ -112,3 +135,51 @@ struct ActronMasterToZoneMessage {
     void generate(uint8_t data[7]);
 
 };
+
+// General AC Commands
+
+enum class CommandType {
+    MasterSetpoint = 0x3A,
+    FanMode = 0x3B,
+    OperatingMode = 0x3C,
+    ZoneOnOff = 0x3D
+};
+
+struct CommandMasterSetpoint {
+    // In °C 16-30° in 0.5° increments
+    double temperature;
+
+    /// @brief generates the data from the variables in this struct
+    /// @param data to write to, 2 bytes long
+    void generate(uint8_t data[2]);
+};
+
+enum class FanMode {
+    Off = 0,
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    Esp = 4,
+    LowContinuous = 5,
+    MediumContinuous = 6,
+    HighContinuous = 7,
+    EspContinuous = 8
+};
+
+struct CommandFanMode {
+    FanMode fanMode;
+
+    /// @brief generates the data from the variables in this struct
+    /// @param data to write to, 2 bytes long
+    void generate(uint8_t data[2]);
+};
+
+struct CommandZoneState {
+    bool zoneOn[8];
+
+    /// @brief generates the data from the variables in this struct
+    /// @param data to write to, 2 bytes long
+    void generate(uint8_t data[2]);
+};
+
+}

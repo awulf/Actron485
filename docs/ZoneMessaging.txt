@@ -130,6 +130,7 @@ Z: C3 31 82 04 85 			1100 0011  0011 0001  1000 0010  0000 0100  1000 0101
 
 Baudrate 4800
 Master will also call C`z` (C3) when looking for a missing controller. A reply will activate it calling 8`z` (83) again.
+Unknown how a wall controller knows which zone it is
 
 Temperatures 2 Bytes = Temperature x0.1 e.g. 0x0100 = 256*0.1 => 25.6
 Temperatures 1 Byte = Temperature / 2 e.g. 0x2a = 42/2 => 21

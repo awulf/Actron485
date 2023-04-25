@@ -1,16 +1,43 @@
 #include "ActronDataModels.h"
 #include "Utilities.h"
 
-///////////////////////////////////
-// ActronZoneToMasterMessage
+namespace Actron485 {
 
-void ActronZoneToMasterMessage::printToSerial() {
+///////////////////////////////////
+// Message type
+
+MessageType detectActronMessageType(uint8_t firstBit) {
+    if (firstBit & MessageType::Command == MessageType::Command) {
+        return MessageType::Command;
+    } else if (firstBit & MessageType::ZoneWallController == MessageType::ZoneWallController) {
+        return MessageType::ZoneWallController;
+    } else if (firstBit & MessageType::ZoneMasterController == MessageType::ZoneMasterController) {
+        return MessageType::ZoneMasterController;
+    } else if (firstBit == (uint8_t) MessageType::MasterBoard) {
+        return MessageType::MasterBoard;
+    } else if (firstBit == (uint8_t) MessageType::OutdoorUnit) {
+        return MessageType::OutdoorUnit;
+    } else if (firstBit == (uint8_t) MessageType::Stat1) {
+        return MessageType::Stat1;
+    } else if (firstBit == (uint8_t) MessageType::Stat2) {
+        return MessageType::Stat2;
+    } else if (firstBit == (uint8_t) MessageType::Stat3) {
+        return MessageType::Stat3;
+    }
+    
+    return MessageType::Unknown;
+}
+
+///////////////////////////////////
+// Actron485::ZoneToMasterMessage
+
+void ZoneToMasterMessage::printToSerial() {
 
     // Decoded
     Serial.print("C: Zone: ");
     Serial.print(zone);
 
-    if (type == actronZoneMessageTypeNormal) {
+    if (type == ZoneMessageType::Normal) {
         Serial.print(", Set Point: ");
         Serial.print(setpoint);
 
@@ -23,28 +50,28 @@ void ActronZoneToMasterMessage::printToSerial() {
 
         Serial.print(", Mode: ");
         switch (mode) {
-            case actronZoneModeOff:
+            case ZoneMode::Off:
                 Serial.print("Off");
                 break;
-            case actronZoneModeOn:
+            case ZoneMode::On:
                 Serial.print("On");
                 break;
-            case actronZoneModeOpen:
+            case ZoneMode::Open:
                 Serial.print("Open");
                 break;
         }
 
-    } else if (type == actronZoneMessageTypeConfig) {
+    } else if (type == ZoneMessageType::Config) {
         Serial.print(", Temp Offset: ");
         Serial.print(temperature);
 
-    } else if (type == actronZoneMessageTypeInitZone) {
+    } else if (type == ZoneMessageType::InitZone) {
         Serial.print(", Init Zone");
         Serial.print(temperature);
     }
 }
 
-void ActronZoneToMasterMessage::parse(uint8_t data[5]) {
+void ZoneToMasterMessage::parse(uint8_t data[5]) {
     
     zone = data[0] & 0b00001111;
 
@@ -53,25 +80,25 @@ void ActronZoneToMasterMessage::parse(uint8_t data[5]) {
     bool zoneOn = (data[2] & 0b10000000) == 0b10000000;
     bool openMode = (data[2] & 0b01000000) == 0b01000000;
     if (zoneOn && openMode) {
-        mode = actronZoneModeOpen;
+        mode = ZoneMode::Open;
     } else if (zoneOn) {
-        mode = actronZoneModeOn;
+        mode = ZoneMode::On;
     } else {
-        mode = actronZoneModeOff;
+        mode = ZoneMode::Off;
     }
 
     bool configMessage = (data[2] & 0b00100000) == 0b00100000;
     bool initMessage = (data[2] & 0b00010000) == 0b00010000;
     if (configMessage) {
-        type = actronZoneMessageTypeConfig;
+        type = ZoneMessageType::Config;
         
         // Offset temperature
         temperature = (double)((int8_t)data[3]) / 10.0;
     } else if (initMessage) {
-        type = actronZoneMessageTypeInitZone;
+        type = ZoneMessageType::InitZone;
 
     } else {
-        type = actronZoneMessageTypeNormal;
+        type = ZoneMessageType::Normal;
 
         // Two last bits of data[2] are the leading bits for the raw temperature value
         uint8_t leadingBites = data[2] & 0b00000011;
@@ -85,19 +112,19 @@ void ActronZoneToMasterMessage::parse(uint8_t data[5]) {
     }
 }
 
-void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
+void ZoneToMasterMessage::generate(uint8_t data[5]) {
     // Byte 1, Start nibble C and zone nibble
     data[0] = 0b11000000 | zone;
 
     // Byte 2, Set Point Temp where Temp=Number/2. In 0.5° increments. 16->30
     data[1] = (uint8_t) (setpoint * 2.0);
 
-    if (type == actronZoneMessageTypeNormal) {
+    if (type == ZoneMessageType::Normal) {
         int16_t rawTemp = zoneTempToMaster(temperature);
         int16_t rawTempValue = rawTemp - (rawTemp < 0 ? -512 : 512);
 
         // Byte 3
-        data[2] = (mode != actronZoneModeOff ? 0b10000000 : 0b0) | (mode == actronZoneModeOpen ? 0b01000000 : 0b0) | (rawTempValue >> 8 & 0b00000011);
+        data[2] = (mode != ZoneMode::Off ? 0b10000000 : 0b0) | (mode == ZoneMode::Open ? 0b01000000 : 0b0) | (rawTempValue >> 8 & 0b00000011);
 
         // Byte 4
         data[3] = (uint8_t)rawTempValue;
@@ -105,9 +132,9 @@ void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
         // Byte 5, check/verify byte
         data[4] = data[2] - (data[2] << 1) - data[3] - data[1] - data[0] - 1;
 
-    } else if (type == actronZoneMessageTypeConfig) {
+    } else if (type == ZoneMessageType::Config) {
         // Byte 3, config bit set to 1
-        data[2] = (mode != actronZoneModeOff ? 0b10000000 : 0b0) | (mode == actronZoneModeOpen ? 0b01000000 : 0b0) | 0b00100000;
+        data[2] = (mode != ZoneMode::Off ? 0b10000000 : 0b0) | (mode == ZoneMode::Open ? 0b01000000 : 0b0) | 0b00100000;
 
         // Byte 4, temperature calibration offset x10, E.g. -32 * 0.1 -> -3.2. Min -3.2 Max 3.0°C
         data[3] = (int8_t) (temperature * 10.0);
@@ -115,9 +142,9 @@ void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
         // Byte 5, check/verify byte
         data[4] = data[2] - data[3] - data[1] - (data[0] & 0b1111) - 1;
 
-    }  else if (type == actronZoneMessageTypeInitZone) {
+    }  else if (type == ZoneMessageType::InitZone) {
         // Byte 3, config bit set to 1
-        data[2] = (mode != actronZoneModeOff ? 0b10000000 : 0b0) | (mode == actronZoneModeOpen ? 0b01000000 : 0b0) | 0b00010001;
+        data[2] = (mode != ZoneMode::Off ? 0b10000000 : 0b0) | (mode == ZoneMode::Open ? 0b01000000 : 0b0) | 0b00010001;
 
         // Byte 4, empty
         data[3] = 0;
@@ -127,7 +154,7 @@ void ActronZoneToMasterMessage::generate(uint8_t data[5]) {
     }
 }
 
-double ActronZoneToMasterMessage::zoneTempFromMaster(int16_t rawValue) {
+double ZoneToMasterMessage::zoneTempFromMaster(int16_t rawValue) {
     double temp;
     double out = 0;
     if (rawValue < -58) {
@@ -144,7 +171,7 @@ double ActronZoneToMasterMessage::zoneTempFromMaster(int16_t rawValue) {
     return temp;
 }
 
-int16_t ActronZoneToMasterMessage::zoneTempToMaster(double temperature) {
+int16_t ZoneToMasterMessage::zoneTempToMaster(double temperature) {
     int16_t out = 0;
     if (temperature > 30.8) {
         out = (int16_t) round(-118.478*(sqrt(14.3372 + temperature)-6.23195));
@@ -157,9 +184,9 @@ int16_t ActronZoneToMasterMessage::zoneTempToMaster(double temperature) {
 }
 
 ///////////////////////////////////
-// ActronMasterToZoneMessage
+// Actron485::MasterToZoneMessage
 
-void ActronMasterToZoneMessage::printToSerial() {
+void MasterToZoneMessage::printToSerial() {
     Serial.print("M: Zone: ");
     Serial.print(zone);
 
@@ -200,7 +227,7 @@ void ActronMasterToZoneMessage::printToSerial() {
     Serial.print("%");
 }
 
-void ActronMasterToZoneMessage::parse(uint8_t data[7]) {
+void MasterToZoneMessage::parse(uint8_t data[7]) {
     zone = data[0] & 0b00001111;
 
     // Temperature bits: [23][08 - 15]
@@ -226,21 +253,21 @@ void ActronMasterToZoneMessage::parse(uint8_t data[7]) {
     damperPosition = (data[2] & 0b00011100) >> 2;
 
     if (!compressorMode && !fanMode) {
-        operationMode = actronZoneOperationModeSystemOff;
+        operationMode = ZoneOperationMode::SystemOff;
     } else if (!on) {
-        operationMode = actronZoneOperationModeZoneOff;
+        operationMode = ZoneOperationMode::ZoneOff;
     } else if (fanMode) {
-        operationMode = actronZoneOperationModeFanOnly;
+        operationMode = ZoneOperationMode::FanOnly;
     } else if (!compressorActive) {
-        operationMode = actronZoneOperationModeStandby;
+        operationMode = ZoneOperationMode::Standby;
     } else if (heating) {
-        operationMode = actronZoneOperationModeHeating;
+        operationMode = ZoneOperationMode::Heating;
     } else {
-        operationMode = actronZoneOperationModeCooling;
+        operationMode = ZoneOperationMode::Cooling;
     }
 }
 
-void ActronMasterToZoneMessage::generate(uint8_t data[7]) {
+void MasterToZoneMessage::generate(uint8_t data[7]) {
     // Byte 1, Start nibble 8 and zone nibble
     data[0] = 0b10000000 | zone;
 
@@ -263,4 +290,6 @@ void ActronMasterToZoneMessage::generate(uint8_t data[7]) {
 
     // Byte 7, check byte
     data[6] = data[2] - (data[2] << 1) - data[5] - data[4] - data[3] - data[1] - data[0] - 1;
+}
+
 }
