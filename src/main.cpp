@@ -1,5 +1,5 @@
 #include "Utilities.h"
-#include "ActronDataModels.h"
+#include "Actron485.h"
 
 #define RS485_SERIAL_BAUD 4800
 #define RS485_SERIAL_MODE SERIAL_8N1
@@ -88,7 +88,7 @@ void sendZoneMessage() {
   Serial1.flush(true);
   serialWrite(false);
 
-  zoneState.printToSerial();
+  zoneState.print();
   Serial.println();
   printBinaryBytes(data, 5);
   Serial.println();
@@ -173,7 +173,7 @@ void decodeMasterToZone() {
 
     if (!bytesEqual(serialBuffer, newData, 7)) {
       Serial.println("Error! Byte Miss Match!");
-      message.printToSerial();
+      message.print();
       Serial.println();
 
       // Binary
@@ -184,7 +184,7 @@ void decodeMasterToZone() {
       Serial.println();
 
     } else if (print) {
-      message.printToSerial();
+      message.print();
       Serial.println();
       printBinaryBytes(newData, 7);
       Serial.println();
@@ -225,7 +225,7 @@ void decodeZoneToMaster() {
 
     if (!bytesEqual(serialBuffer, newData, 5)) {
       Serial.println("Error! Byte Miss Match!");
-      message.printToSerial();
+      message.print();
       Serial.println();
 
       // Binary
@@ -236,7 +236,7 @@ void decodeZoneToMaster() {
       Serial.println();
 
     } else if (print) {
-      message.printToSerial();
+      message.print();
       Serial.println();
       printBinaryBytes(newData, 7);
       Serial.println();

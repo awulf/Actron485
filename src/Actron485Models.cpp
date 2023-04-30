@@ -1,4 +1,4 @@
-#include "ActronDataModels.h"
+#include "Actron485Models.h"
 #include "Utilities.h"
 
 namespace Actron485 {
@@ -7,8 +7,14 @@ namespace Actron485 {
 // Message type
 
 MessageType detectActronMessageType(uint8_t firstBit) {
-    if (firstBit & MessageType::Command == MessageType::Command) {
-        return MessageType::Command;
+    if (firstBit & MessageType::CommandMasterSetpoint == MessageType::CommandMasterSetpoint) {
+        return MessageType::CommandMasterSetpoint;
+    } else if (firstBit & MessageType::CommandFanMode == MessageType::CommandFanMode) {
+        return MessageType::CommandFanMode;
+    } else if (firstBit & MessageType::CommandOperatingMode == MessageType::CommandOperatingMode) {
+        return MessageType::CommandOperatingMode;
+    } else if (firstBit & MessageType::CommandZoneState == MessageType::CommandZoneState) {
+        return MessageType::CommandZoneState;
     } else if (firstBit & MessageType::ZoneWallController == MessageType::ZoneWallController) {
         return MessageType::ZoneWallController;
     } else if (firstBit & MessageType::ZoneMasterController == MessageType::ZoneMasterController) {
@@ -31,43 +37,43 @@ MessageType detectActronMessageType(uint8_t firstBit) {
 ///////////////////////////////////
 // Actron485::ZoneToMasterMessage
 
-void ZoneToMasterMessage::printToSerial() {
+void ZoneToMasterMessage::print() {
 
     // Decoded
-    Serial.print("C: Zone: ");
-    Serial.print(zone);
+    printOut.print("C: Zone: ");
+    printOut.print(zone);
 
     if (type == ZoneMessageType::Normal) {
-        Serial.print(", Set Point: ");
-        Serial.print(setpoint);
+        printOut.print(", Set Point: ");
+        printOut.print(setpoint);
 
-        Serial.print(", Temp: ");
-        Serial.print(temperature);
+        printOut.print(", Temp: ");
+        printOut.print(temperature);
 
-        Serial.print("(Pre:");
-        Serial.print(temperaturePreAdjustment);
-        Serial.print(")");
+        printOut.print("(Pre:");
+        printOut.print(temperaturePreAdjustment);
+        printOut.print(")");
 
-        Serial.print(", Mode: ");
+        printOut.print(", Mode: ");
         switch (mode) {
             case ZoneMode::Off:
-                Serial.print("Off");
+                printOut.print("Off");
                 break;
             case ZoneMode::On:
-                Serial.print("On");
+                printOut.print("On");
                 break;
             case ZoneMode::Open:
-                Serial.print("Open");
+                printOut.print("Open");
                 break;
         }
 
     } else if (type == ZoneMessageType::Config) {
-        Serial.print(", Temp Offset: ");
-        Serial.print(temperature);
+        printOut.print(", Temp Offset: ");
+        printOut.print(temperature);
 
     } else if (type == ZoneMessageType::InitZone) {
-        Serial.print(", Init Zone");
-        Serial.print(temperature);
+        printOut.print(", Init Zone");
+        printOut.print(temperature);
     }
 }
 
@@ -186,45 +192,45 @@ int16_t ZoneToMasterMessage::zoneTempToMaster(double temperature) {
 ///////////////////////////////////
 // Actron485::MasterToZoneMessage
 
-void MasterToZoneMessage::printToSerial() {
-    Serial.print("M: Zone: ");
-    Serial.print(zone);
+void MasterToZoneMessage::print() {
+    printOut.print("M: Zone: ");
+    printOut.print(zone);
 
-    Serial.print(", Set Point: ");
-    Serial.print(setpoint);
+    printOut.print(", Set Point: ");
+    printOut.print(setpoint);
 
-    Serial.print(", Temp: ");
-    Serial.print(temperature);
+    printOut.print(", Temp: ");
+    printOut.print(temperature);
 
-    Serial.print(", SP Range: ");
-    Serial.print(minSetpoint);
-    Serial.print("-");
-    Serial.print(maxSetpoint);
+    printOut.print(", SP Range: ");
+    printOut.print(minSetpoint);
+    printOut.print("-");
+    printOut.print(maxSetpoint);
 
-    Serial.print(", Compr. Mode: ");
-    Serial.print(compressorMode ? "On " : "Off");
+    printOut.print(", Compr. Mode: ");
+    printOut.print(compressorMode ? "On " : "Off");
     if (compressorMode) {
-        Serial.print(heating ? "Heating" : "Cooling");
+        printOut.print(heating ? "Heating" : "Cooling");
     }
 
     if (maybeTurningOff) {
-        Serial.print("??Maybe Turning Off??");
+        printOut.print("??Maybe Turning Off??");
     }
 
-    Serial.print(", Zone: ");
-    Serial.print(on ? "On" : "Off");
+    printOut.print(", Zone: ");
+    printOut.print(on ? "On" : "Off");
 
     if (on) {
         if (fanMode) {
-            Serial.print(", Fan Mode");
+            printOut.print(", Fan Mode");
         } else if (compressorActive) {
-            Serial.print(", Compr. Active");
+            printOut.print(", Compr. Active");
         }
     }
 
-    Serial.print(", Damper Pos: ");
-    Serial.print((int)((double)damperPosition/5.0*100.0));
-    Serial.print("%");
+    printOut.print(", Damper Pos: ");
+    printOut.print((int)((double)damperPosition/5.0*100.0));
+    printOut.print("%");
 }
 
 void MasterToZoneMessage::parse(uint8_t data[7]) {
@@ -290,6 +296,127 @@ void MasterToZoneMessage::generate(uint8_t data[7]) {
 
     // Byte 7, check byte
     data[6] = data[2] - (data[2] << 1) - data[5] - data[4] - data[3] - data[1] - data[0] - 1;
+}
+
+///////////////////////////////////
+// Actron485::CommandMasterSetpoint
+
+void CommandMasterSetpoint::print() {
+    printOut.print("Master Temperature Setpoint Command: ");
+    printOut.println();
+}
+
+void CommandMasterSetpoint::parse(uint8_t data[2]) {
+    temperature = ((double) data[1]) / 2.0;
+}
+
+void CommandMasterSetpoint::generate(uint8_t data[2]) {
+    data[0] = (uint8_t) MessageType::CommandMasterSetpoint;
+    data[1] = (uint8_t) round(temperature * 2);
+}
+
+///////////////////////////////////
+// Actron485::FanModeCommand
+
+void FanModeCommand::print() {
+    printOut.print("Fan Mode Command: ");
+    switch (fanMode) {
+        case FanMode::Off:
+            printOut.println("Off");
+            break;
+        case FanMode::Low:
+            printOut.println("Low");
+            break;
+        case FanMode::Medium:
+            printOut.println("Medium");
+            break;
+        case FanMode::High:
+            printOut.println("High");
+            break;
+        case FanMode::Esp:
+            printOut.println("ESP");
+            break;
+        case FanMode::LowContinuous:
+            printOut.println("Low Continuous");
+            break;
+        case FanMode::MediumContinuous:
+            printOut.println("Medium Continuous");
+            break;
+        case FanMode::HighContinuous:
+            printOut.println("High Continuous");
+            break;
+        case FanMode::EspContinuous:
+            printOut.println("ESP Continuous");
+            break;
+    }
+}
+
+void FanModeCommand::parse(uint8_t data[2]) {
+    fanMode = FanMode(data[1]);
+}
+
+void FanModeCommand::generate(uint8_t data[2]) {
+    data[0] = (uint8_t) MessageType::CommandFanMode;
+    data[1] = (uint8_t) fanMode;
+}
+
+///////////////////////////////////
+// Actron485::ZoneStateCommand
+
+void ZoneStateCommand::print() {
+    printOut.println("Zone State Command: ");
+    printOut.println("1 2 3 4 5 6 7 8");
+    for (int i = 0; i<8; i++) {
+        printOut.print(zoneOn[i] ? "1 " : "_ ");
+    }
+    printOut.println();
+}
+
+void ZoneStateCommand::parse(uint8_t data[2]) {
+    for (int i=0; i<8; i++) {
+        zoneOn[i] = (data[1] & (1 << i)) >> i;
+    }
+}
+
+void ZoneStateCommand::generate(uint8_t data[2]) {
+    data[0] = (uint8_t) MessageType::CommandZoneState;
+    data[1] = 0;
+    for (int i=0; i<8; i++) {
+        data[1] = data[1] | (zoneOn[i] << i);
+    }
+}
+
+///////////////////////////////////
+// Actron485::OperatingModeCommand
+
+void OperatingModeCommand::print() {
+    printOut.print("Operating Mode: ");
+    switch (mode) {
+        case OperatingMode::Off:
+            printOut.println("Off");
+            break;
+        case OperatingMode::FanOnly:
+            printOut.println("Fan Only");
+            break;
+        case OperatingMode::Auto:
+            printOut.println("Auto");
+            break;
+        case OperatingMode::Cool:
+            printOut.println("Cool");
+            break;
+        case OperatingMode::Heat:
+            printOut.println("Heat");
+            break;
+    }
+}
+
+void OperatingModeCommand::parse(uint8_t data[2]) {
+    mode = OperatingMode(data[1]);
+}
+
+void OperatingModeCommand::generate(uint8_t data[2]) {
+    data[0] = (uint8_t) MessageType::CommandOperatingMode;
+    data[1] = (uint8_t) mode;
 }
 
 }

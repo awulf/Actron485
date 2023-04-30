@@ -1,5 +1,7 @@
 #include "Utilities.h"
 
+namespace Actron485 {
+
 void printByte(uint8_t byte) {
     if (byte <= 0x0f) {
         Serial.print("0");  
@@ -39,4 +41,6 @@ bool bytesEqual(uint8_t lhs[], uint8_t rhs[], uint8_t length) {
         }
     }
     return true;
+}
+
 }

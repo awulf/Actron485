@@ -5,11 +5,16 @@
 
 namespace Actron485 {
 
+static Stream &printOut = Serial;
+
 // Message Type
 
 enum class MessageType: uint8_t {
     Unknown = 0xFF,
-    Command = 0x30, // 0x3{command type}
+    CommandMasterSetpoint = 0x3A,
+    CommandFanMode = 0x3B,
+    CommandOperatingMode = 0x3C,
+    CommandZoneState = 0x3D,
     ZoneWallController = 0xC0, // 0xC{zone}
     ZoneMasterController = 0x80, // 0x8{zone}
     MasterBoard = 0x01, // Assumed
@@ -56,8 +61,8 @@ struct ZoneToMasterMessage {
     // Controller Message type
     ZoneMessageType type;
 
-    /// @brief debug print state to serial
-    void printToSerial();
+    /// @brief print state to printOut
+    void print();
 
     /// @brief parse data provided
     /// @param data to read of 5 bytes
@@ -123,8 +128,8 @@ struct MasterToZoneMessage {
     // Interpreted from the provided data
     ZoneOperationMode operationMode;
 
-    /// @brief debug print state to serial
-    void printToSerial();
+    /// @brief print state to printOut
+    void print();
 
     /// @brief parse data provided
     /// @param data to read of 7 bytes
@@ -133,28 +138,27 @@ struct MasterToZoneMessage {
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 5 bytes long
     void generate(uint8_t data[7]);
-
 };
 
 // General AC Commands
 
-enum class CommandType {
-    MasterSetpoint = 0x3A,
-    FanMode = 0x3B,
-    OperatingMode = 0x3C,
-    ZoneOnOff = 0x3D
-};
-
 struct CommandMasterSetpoint {
     // In °C 16-30° in 0.5° increments
     double temperature;
+    
+    /// @brief print state to printOut
+    void print();
 
+    /// @brief parse data provided
+    /// @param data to read of 2 bytes
+    void parse(uint8_t data[2]);
+    
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 2 bytes long
     void generate(uint8_t data[2]);
 };
 
-enum class FanMode {
+enum class FanMode: uint8_t {
     Off = 0,
     Low = 1,
     Medium = 2,
@@ -166,17 +170,54 @@ enum class FanMode {
     EspContinuous = 8
 };
 
-struct CommandFanMode {
+struct FanModeCommand {
     FanMode fanMode;
 
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 2 bytes
+    void parse(uint8_t data[2]);
+    
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 2 bytes long
     void generate(uint8_t data[2]);
 };
 
-struct CommandZoneState {
+struct ZoneStateCommand {
     bool zoneOn[8];
 
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 2 bytes
+    void parse(uint8_t data[2]);
+    
+    /// @brief generates the data from the variables in this struct
+    /// @param data to write to, 2 bytes long
+    void generate(uint8_t data[2]);
+};
+
+enum class OperatingMode: uint8_t {
+    Off = 0b00000000,
+    FanOnly = 0b00010000,
+    Auto = 0b00001100,
+    Cool = 0b00001010,
+    Heat = 0b00001001
+};
+
+struct OperatingModeCommand {
+    OperatingMode mode;
+
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 2 bytes
+    void parse(uint8_t data[2]);
+    
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 2 bytes long
     void generate(uint8_t data[2]);
