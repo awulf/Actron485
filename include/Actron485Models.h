@@ -5,8 +5,6 @@
 
 namespace Actron485 {
 
-static Stream &printOut = Serial;
-
 // Message Type
 
 enum class MessageType: uint8_t {
@@ -17,13 +15,16 @@ enum class MessageType: uint8_t {
     CommandZoneState = 0x3D,
     ZoneWallController = 0xC0, // 0xC{zone}
     ZoneMasterController = 0x80, // 0x8{zone}
-    MasterBoard = 0x01, // Assumed
-    OutdoorUnit = 0x02, // Assumed
-    Stat1 = 0xA0,
-    Stat2 = 0xFE,
-    Stat3 = 0xE0
+    BoardComms1 = 0x01, // Unknown
+    BoardComms2 = 0x02, // Unknown
+    Stat1 = 0xA0, // Unknown
+    Stat2 = 0xFE, // Unknown
+    Stat3 = 0xE0 // Unknown
 };
 
+/// @brief Message type determined by the first byte
+/// @param fistByte to from the message
+/// @return message type
 MessageType detectMessageType(uint8_t firstBit);
 
 // Zone Control Messages
@@ -32,7 +33,7 @@ enum class ZoneMode {
     Off,
     On,
     Open,
-    Ignore = -1 // Not part of the spec, used in thise code wheather to update
+    Ignore = -1 // Not part of the spec, used in this code wheather to update
 };
 
 enum class ZoneMessageType {
@@ -42,6 +43,8 @@ enum class ZoneMessageType {
 };
 
 struct ZoneToMasterMessage {
+    static const uint8_t messageLength = 5;
+
     // Zone number. 0 -> 8
     int zone;
     
@@ -66,11 +69,11 @@ struct ZoneToMasterMessage {
 
     /// @brief parse data provided
     /// @param data to read of 5 bytes
-    void parse(uint8_t data[5]);
+    void parse(uint8_t data[messageLength]);
     
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 5 bytes long
-    void generate(uint8_t data[5]);
+    void generate(uint8_t data[messageLength]);
 
     /// @brief Given the raw encoded value converts to °C as master would interpet
     double zoneTempFromMaster(int16_t rawValue);
@@ -89,6 +92,8 @@ enum class ZoneOperationMode {
 };
 
 struct MasterToZoneMessage {
+    static const uint8_t messageLength = 7;
+
     // Zone number. 0 -> 8
     int zone;
 
@@ -142,7 +147,7 @@ struct MasterToZoneMessage {
 
 // General AC Commands
 
-struct CommandMasterSetpoint {
+struct MasterSetpointCommand {
     // In °C 16-30° in 0.5° increments
     double temperature;
     

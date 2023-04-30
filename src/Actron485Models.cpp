@@ -19,10 +19,10 @@ MessageType detectActronMessageType(uint8_t firstBit) {
         return MessageType::ZoneWallController;
     } else if (firstBit & MessageType::ZoneMasterController == MessageType::ZoneMasterController) {
         return MessageType::ZoneMasterController;
-    } else if (firstBit == (uint8_t) MessageType::MasterBoard) {
-        return MessageType::MasterBoard;
-    } else if (firstBit == (uint8_t) MessageType::OutdoorUnit) {
-        return MessageType::OutdoorUnit;
+    } else if (firstBit == (uint8_t) MessageType::BoardComms1) {
+        return MessageType::BoardComms1;
+    } else if (firstBit == (uint8_t) MessageType::BoardComms2) {
+        return MessageType::BoardComms2;
     } else if (firstBit == (uint8_t) MessageType::Stat1) {
         return MessageType::Stat1;
     } else if (firstBit == (uint8_t) MessageType::Stat2) {
@@ -299,18 +299,18 @@ void MasterToZoneMessage::generate(uint8_t data[7]) {
 }
 
 ///////////////////////////////////
-// Actron485::CommandMasterSetpoint
+// Actron485::MasterSetpointCommand
 
-void CommandMasterSetpoint::print() {
+void MasterSetpointCommand::print() {
     printOut.print("Master Temperature Setpoint Command: ");
     printOut.println();
 }
 
-void CommandMasterSetpoint::parse(uint8_t data[2]) {
+void MasterSetpointCommand::parse(uint8_t data[2]) {
     temperature = ((double) data[1]) / 2.0;
 }
 
-void CommandMasterSetpoint::generate(uint8_t data[2]) {
+void MasterSetpointCommand::generate(uint8_t data[2]) {
     data[0] = (uint8_t) MessageType::CommandMasterSetpoint;
     data[1] = (uint8_t) round(temperature * 2);
 }

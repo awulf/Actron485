@@ -6,22 +6,25 @@ namespace Actron485 {
 
 class Controller {
 
-    Stream *serial;
-    uint8_t writeEnablePin;
+    Stream *_serial;
+
+    uint8_t _writeEnablePin;
+    uint8_t _rxPin;
+    uint8_t _txPin;
 
     /// @brief Zone 1 - 8 (indexed 0-7), Zone own control requests. -1 (actronZoneModeIgnore) when not requesting (e.g. once request has been sent)
-    ZoneMode requestZoneMode[8];
+    ZoneMode _requestZoneMode[8];
 
     /// @brief Buffer size for ingesting serial messages
-    static const size_t serialBufferSize = 64;
+    static const size_t _serialBufferSize = 64;
     /// @brief Serial Buffer for ingesting
-    uint8_t serialBuffer[serialBufferSize];
+    uint8_t _serialBuffer[_serialBufferSize];
     /// @brief Last message received time
-    unsigned long serialBufferReceivedTime = 0;
+    unsigned long _serialBufferReceivedTime = 0;
     /// @brief Minimum time between bytes received to split up serial message in milliseconds
-    static const unsigned long serialBufferBreak = 5;
+    static const unsigned long _serialBufferBreak = 5;
     /// @brief Index of current sequence being read
-    uint8_t serialBufferIndex = 0;
+    uint8_t _serialBufferIndex = 0;
 
     /// @brief Bring up/down the serial write enable pin
     /// @param enable 
@@ -35,6 +38,11 @@ class Controller {
     /// @param zone 
     void sendZoneConfigMessage(int zone);
 
+    /// @brief Attempts to send a zone init message immdiatly for the given zone number, should be sent
+    /// straight after the master controller requests the zone
+    /// @param zone 
+    void sendZoneInitMessage(int zone);
+
     /// @brief Processes the message received, stores and redirects accordingly
     /// @param data 
     void processMessage(uint8_t *data);
@@ -47,17 +55,25 @@ class Controller {
     /// @param zoneMessage 
     void processZoneMessage(ZoneToMasterMessage zoneMessage);
 
+    /// @brief Common setup
+    void setup();
+
+    /// @brief Sends a queued command
+    /// @returns true if a message was sent
+    bool sendQueuedCommand();
+
 public:
 
-    /// @brief initialise controller with serial pins
+    /// @brief initialise controller with serial pins. Supports rx & tx being the same pin if constrained with GPIOs.
     /// @param rxPin pin to receive on
     /// @param txPin pin to write to
     /// @param writeEnablePin for write enable, set to 0 if not used
     Controller(uint8_t rxPin, uint8_t txPin, uint8_t writeEnablePin);
 
     /// @brief initialise controller with a custom stream
+    /// @param writeEnablePin for write enable, set to 0 if not used
     /// @param stream 
-    Controller(Stream &stream);
+    Controller(Stream &stream, uint8_t writeEnablePin);
 
     /// @brief Zone 1 - 8 (indexed 0-7), set bool to corresponding number to make the zone controlled by this controller
     bool zoneControlled[8];
@@ -74,13 +90,37 @@ public:
     /// @brief Zone 1 - 8 (indexed 0-7), last master to zone message
     MasterToZoneMessage masterToZoneMessage[8];
 
-    /// @brief Message type determined by the first byte
-    /// @param fistByte to from the message
-    /// @return message type
-    MessageType messageType(uint8_t fistByte);
-
-    /// @brief Call with the run loop
+    /// @brief Must be called with the main run loop
     void loop();
+
+    //////////////////////
+    // Queued Commands awaiting to be sent, when set will send one by one to the controller on each loop,
+    // priority in the order listed in the declarations below
+
+    /// @brief setpoint command, sent on next cycle
+    OperatingModeCommand queuedOperatingModeCommand;
+    /// @brief zone state command, sent on next cycle, for self controlled zones best to use ZoneToMasterMessage
+    ZoneStateCommand queuedZoneStateCommand;
+    /// @brief setpoint command, sent on next cycle
+    MasterSetpointCommand queueSetpointCommand;
+    /// @brief fan mode command, sent on next cycle
+    FanModeCommand queueFanModeCommand;
+
+    //////////////////////
+    /// Below are last stored messages of those assumed types, better understanding still required
+
+    // This message varies in length, and occurs up to two times per sequence
+    uint8_t boardComms1MessageLength[2];
+    uint8_t boardComms1Message[2][40];
+
+    const static uint8_t boardComms2MessageLength = 18;
+    uint8_t boardComms2Message[boardComms2MessageLength];
+    const static uint8_t stat1MessageLength = 23;
+    uint8_t stat1Message[stat1MessageLength];
+    const static uint8_t stat2MessageLength = 19;
+    uint8_t stat2Message[19];
+    const static uint8_t stat3MessageLength = 32;
+    uint8_t stat3Message[32];
 };
 
 }

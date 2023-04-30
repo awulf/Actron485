@@ -33,7 +33,7 @@ A0... Status
 11: 
 12: 
 13: 
-14: Set Point -> Temp: Value/2.0 °C
+14: Master Setpoint -> Temp: Value/2.0 °C
 15: 
 16: 
 17: 

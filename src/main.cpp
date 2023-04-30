@@ -4,7 +4,7 @@
 #define RS485_SERIAL_BAUD 4800
 #define RS485_SERIAL_MODE SERIAL_8N1
 #define RXD GPIO_NUM_27 //Serial port RX2 pin assignment 
-#define TXD GPIO_NUM_26 //Serial port TX2 pin assignment
+#define TXD GPIO_NUM_27 //GPIO_NUM_26 //Serial port TX2 pin assignment
 #define WRITE_ENABLE GPIO_NUM_25 //Enable Out / Disable In
 
 using namespace Actron485;
@@ -34,8 +34,19 @@ uint8_t previousZoneMasterPacket[8][7];
 
 void serialWrite(bool enable) {
   if (enable) {
+    if (RXD==TXD) {
+      pinMatrixOutDetach(RXD, false, false);
+      pinMode(TXD, OUTPUT);
+      pinMatrixOutAttach(TXD, U1TXD_OUT_IDX, false, false);
+    }
+
     digitalWrite(WRITE_ENABLE, HIGH); 
   } else {
+    if (RXD==TXD) {
+      pinMatrixOutDetach(TXD, false, false);
+      pinMode(RXD, INPUT);
+      pinMatrixOutAttach(RXD, U1RXD_IN_IDX, false, false);
+    }
     digitalWrite(WRITE_ENABLE, LOW); 
   }
 }
@@ -218,7 +229,7 @@ void decodeZoneToMaster() {
         previousZoneWallPacket[zone][i] = serialBuffer[i];
       }
     }
-    print = zone == 3;//!same || message.type == actronZoneMessageTypeInitZone;
+    print = zone == !same || message.type == ZoneMessageType::InitZone || zone == 3;
 
     uint8_t newData[5];
     message.generate(newData);
@@ -238,7 +249,7 @@ void decodeZoneToMaster() {
     } else if (print) {
       message.print();
       Serial.println();
-      printBinaryBytes(newData, 7);
+      printBinaryBytes(newData, 5);
       Serial.println();
       Serial.println();
     }
@@ -270,8 +281,6 @@ void setup() {
   zoneState.mode = ZoneMode::Ignore;
   zoneState.type = ZoneMessageType::Normal;
   zoneState.zone = ourZoneNumber;
-  zoneState.setpoint = setpoint; // TODO: read from memory
-  zoneState.temperature = temperature; // TODO: read from sensor
 
   // Logging serial
   Serial.begin(115200);
@@ -280,6 +289,7 @@ void setup() {
   pinMode(WRITE_ENABLE, OUTPUT);
   serialWrite(false);
   Serial1.begin(4800, SERIAL_8N1, RXD, TXD);
+  // Serial1.singl
 }
 
 void loop() {

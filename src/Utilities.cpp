@@ -4,10 +4,10 @@ namespace Actron485 {
 
 void printByte(uint8_t byte) {
     if (byte <= 0x0f) {
-        Serial.print("0");  
+        printOut.print("0");  
     }
-    Serial.print(byte, HEX);
-    Serial.print(" ");
+    printOut.print(byte, HEX);
+    printOut.print(" ");
 }
 
 void printBinaryByte(uint8_t byte) {
