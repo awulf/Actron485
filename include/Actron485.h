@@ -15,6 +15,9 @@ class Controller {
     /// @brief Zone 1 - 8 (indexed 0-7), Zone own control requests. -1 (actronZoneModeIgnore) when not requesting (e.g. once request has been sent)
     ZoneMode _requestZoneMode[8];
 
+    /// @brief If true, on next zone message, will send a configuration
+    bool _sendZoneConfig[8];
+
     /// @brief Buffer size for ingesting serial messages
     static const size_t _serialBufferSize = 64;
     /// @brief Serial Buffer for ingesting
@@ -42,10 +45,6 @@ class Controller {
     /// straight after the master controller requests the zone
     /// @param zone 
     void sendZoneInitMessage(int zone);
-
-    /// @brief Processes the message received, stores and redirects accordingly
-    /// @param data 
-    void processMessage(uint8_t *data);
 
     /// @brief Process the master to zone message received, adjusts stored zone paramters accordingly
     /// @param masterMessage to process
@@ -107,9 +106,13 @@ public:
     FanModeCommand queueFanModeCommand;
 
     //////////////////////
-    /// Below are last stored messages of those assumed types, better understanding still required
+    /// Below are last stored messages. Some of those assumed types, better understanding still required
+
+    uint8_t zoneWallMessageRaw[8][5];
+    uint8_t zoneMasterMessageRaw[8][7];
 
     // This message varies in length, and occurs up to two times per sequence
+    uint8_t boardComms1Index; // records count per sequence
     uint8_t boardComms1MessageLength[2];
     uint8_t boardComms1Message[2][40];
 

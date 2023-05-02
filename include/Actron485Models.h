@@ -13,6 +13,7 @@ enum class MessageType: uint8_t {
     CommandFanMode = 0x3B,
     CommandOperatingMode = 0x3C,
     CommandZoneState = 0x3D,
+    CustomCommandChangeZoneSetpoint = 0x3F,
     ZoneWallController = 0xC0, // 0xC{zone}
     ZoneMasterController = 0x80, // 0x8{zone}
     BoardComms1 = 0x01, // Unknown
@@ -176,6 +177,8 @@ enum class FanMode: uint8_t {
 };
 
 struct FanModeCommand {
+    static const uint8_t messageLength = 2;
+
     FanMode fanMode;
 
     /// @brief print state to printOut
@@ -191,6 +194,8 @@ struct FanModeCommand {
 };
 
 struct ZoneStateCommand {
+    static const uint8_t messageLength = 2;
+
     bool zoneOn[8];
 
     /// @brief print state to printOut
@@ -214,8 +219,33 @@ enum class OperatingMode: uint8_t {
 };
 
 struct OperatingModeCommand {
+    static const uint8_t messageLength = 2;
+
     OperatingMode mode;
 
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 2 bytes
+    void parse(uint8_t data[2]);
+    
+    /// @brief generates the data from the variables in this struct
+    /// @param data to write to, 2 bytes long
+    void generate(uint8_t data[2]);
+};
+
+/// @brief Custom command to this library, allows other controllers (e.g. a seperate zone wall controllers)
+/// to change the temperature via direct communication
+struct ZoneSetpointCustomCommand {
+    static const uint8_t messageLength = 3;
+
+    // In °C 16-30° in 0.5° increments
+    double temperature;
+
+    // Zone to change
+    uint8_t zone;
+    
     /// @brief print state to printOut
     void print();
 

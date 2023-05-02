@@ -43,4 +43,13 @@ bool bytesEqual(uint8_t lhs[], uint8_t rhs[], uint8_t length) {
     return true;
 }
 
+bool copyBytes(uint8_t source[], uint8_t destination[], uint8_t length) {
+    bool same = true;
+    for (int i=0; i<length; i++) {
+        same = same && source[i] == destination[i];
+        source[i] = destination[i];
+    }
+    return !same;
+}
+
 }

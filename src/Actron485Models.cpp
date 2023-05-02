@@ -302,8 +302,8 @@ void MasterToZoneMessage::generate(uint8_t data[7]) {
 // Actron485::MasterSetpointCommand
 
 void MasterSetpointCommand::print() {
-    printOut.print("Master Temperature Setpoint Command: ");
-    printOut.println();
+    printOut.print("Command Master Temperature Setpoint: ");
+    printOut.println(temperature);
 }
 
 void MasterSetpointCommand::parse(uint8_t data[2]) {
@@ -319,7 +319,7 @@ void MasterSetpointCommand::generate(uint8_t data[2]) {
 // Actron485::FanModeCommand
 
 void FanModeCommand::print() {
-    printOut.print("Fan Mode Command: ");
+    printOut.print("Command: Fan Mode: ");
     switch (fanMode) {
         case FanMode::Off:
             printOut.println("Off");
@@ -364,7 +364,7 @@ void FanModeCommand::generate(uint8_t data[2]) {
 // Actron485::ZoneStateCommand
 
 void ZoneStateCommand::print() {
-    printOut.println("Zone State Command: ");
+    printOut.println("Command: Zone State: ");
     printOut.println("1 2 3 4 5 6 7 8");
     for (int i = 0; i<8; i++) {
         printOut.print(zoneOn[i] ? "1 " : "_ ");
@@ -390,7 +390,7 @@ void ZoneStateCommand::generate(uint8_t data[2]) {
 // Actron485::OperatingModeCommand
 
 void OperatingModeCommand::print() {
-    printOut.print("Operating Mode: ");
+    printOut.print("Command: Operating Mode: ");
     switch (mode) {
         case OperatingMode::Off:
             printOut.println("Off");
@@ -417,6 +417,28 @@ void OperatingModeCommand::parse(uint8_t data[2]) {
 void OperatingModeCommand::generate(uint8_t data[2]) {
     data[0] = (uint8_t) MessageType::CommandOperatingMode;
     data[1] = (uint8_t) mode;
+}
+
+///////////////////////////////////
+// Actron485::ZoneSetpointCustomCommand
+
+void ZoneSetpointCustomCommand::print() {
+    printOut.print("Command: Zone ");
+    printOut.print(zone);
+    printOut.print(", Temperature Setpoint: ");
+    printOut.print(temperature);
+    printOut.println();
+}
+
+void ZoneSetpointCustomCommand::parse(uint8_t data[3]) {
+    zone = data[1];
+    temperature = ((double) data[2]) / 2.0;
+}
+
+void ZoneSetpointCustomCommand::generate(uint8_t data[3]) {
+    data[0] = (uint8_t) MessageType::CustomCommandChangeZoneSetpoint;
+    data[1] = zone;
+    data[2] = (uint8_t) round(temperature * 2);
 }
 
 }

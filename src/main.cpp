@@ -1,13 +1,22 @@
 #include "Utilities.h"
 #include "Actron485.h"
+#include <Wire.h>                                                       // required by BME280 library
+#include <BME280_t.h>    
 
 #define RS485_SERIAL_BAUD 4800
 #define RS485_SERIAL_MODE SERIAL_8N1
-#define RXD GPIO_NUM_27 //Serial port RX2 pin assignment 
-#define TXD GPIO_NUM_27 //GPIO_NUM_26 //Serial port TX2 pin assignment
-#define WRITE_ENABLE GPIO_NUM_25 //Enable Out / Disable In
+#define RXD GPIO_NUM_34 //Serial port RX2 pin assignment 
+#define TXD GPIO_NUM_12 //GPIO_NUM_26 //Serial port TX2 pin assignment
+#define WRITE_ENABLE GPIO_NUM_13 //Enable Out / Disable In
+
+BME280<> BMESensor;     
+// char bufout[10];
+#define ASCII_ESC 27
+#define MYALTITUDE  373
 
 using namespace Actron485;
+
+unsigned long temperatureReadTime;
 
 const size_t serialBufferSize = 64;
 uint8_t serialBuffer[serialBufferSize];
@@ -23,7 +32,6 @@ bool zoneStateInitialised = false;
 ZoneToMasterMessage zoneState;
 
 // Zone control state, master controller can't control these
-double temperature = 20.4;
 double setpoint = 21.0;
 
 // Zone own control requests. -1 (actronZoneModeIgnore) when not requesting (e.g. once request has been sent)
@@ -277,6 +285,9 @@ bool zoneDecode() {
 }
 
 void setup() {
+  Wire.begin(15,14);                                                      // initialize I2C that connects to sensor
+  BMESensor.begin();   
+
   // Setup zone state
   zoneState.mode = ZoneMode::Ignore;
   zoneState.type = ZoneMessageType::Normal;
@@ -293,6 +304,7 @@ void setup() {
 }
 
 void loop() {
+  
   // put your main code here, to run repeatedly:
   unsigned long now = millis();
   long serialLastReceivedTime = now-serialBufferReceivedTime;
@@ -325,6 +337,35 @@ void loop() {
     serialBuffer[serialBufferIndex] = byte;
     serialBufferIndex++;
     serialBufferReceivedTime = millis();
+  }
+
+  if ((now - temperatureReadTime) > 10000) {
+    BMESensor.refresh();                                                  // read current sensor data
+    // sprintf(bufout,"%c[1;0H",ASCII_ESC);
+    // Serial.print(bufout);
+
+    Serial.print("Temperature: ");
+    Serial.print(BMESensor.temperature);                                  // display temperature in Celsius
+    Serial.println("C");
+    zoneState.temperature = BMESensor.temperature;
+
+    Serial.print("Humidity:    ");
+    Serial.print(BMESensor.humidity);                                     // display humidity in %   
+    Serial.println("%");
+
+    Serial.print("Pressure:    ");
+    Serial.print(BMESensor.pressure  / 100.0F);                           // display pressure in hPa
+    Serial.println("hPa");
+
+    float relativepressure = BMESensor.seaLevelForAltitude(MYALTITUDE);
+    Serial.print("RelPress:    ");
+    Serial.print(relativepressure  / 100.0F);                             // display relative pressure in hPa for given altitude
+    Serial.println("hPa");   
+
+    Serial.print("Altitude:    ");
+    Serial.print(BMESensor.pressureToAltitude(relativepressure));         // display altitude in m for given pressure
+    Serial.println("m");
+    temperatureReadTime = now;
   }
 
 }
