@@ -5,6 +5,14 @@
 
 namespace Actron485 {
 
+// Debugging
+
+enum class PrintOutMode: uint8_t {
+    StatusOnly,
+    ChangedMessages,
+    AllMessages,
+};
+
 // Message Type
 
 enum class MessageType: uint8_t {
@@ -22,11 +30,6 @@ enum class MessageType: uint8_t {
     Stat2 = 0xFE, // Unknown
     Stat3 = 0xE0 // Unknown
 };
-
-/// @brief Message type determined by the first byte
-/// @param fistByte to from the message
-/// @return message type
-MessageType detectMessageType(uint8_t firstBit);
 
 // Zone Control Messages
 

@@ -4,37 +4,6 @@
 namespace Actron485 {
 
 ///////////////////////////////////
-// Message type
-
-MessageType detectActronMessageType(uint8_t firstBit) {
-    if (firstBit & MessageType::CommandMasterSetpoint == MessageType::CommandMasterSetpoint) {
-        return MessageType::CommandMasterSetpoint;
-    } else if (firstBit & MessageType::CommandFanMode == MessageType::CommandFanMode) {
-        return MessageType::CommandFanMode;
-    } else if (firstBit & MessageType::CommandOperatingMode == MessageType::CommandOperatingMode) {
-        return MessageType::CommandOperatingMode;
-    } else if (firstBit & MessageType::CommandZoneState == MessageType::CommandZoneState) {
-        return MessageType::CommandZoneState;
-    } else if (firstBit & MessageType::ZoneWallController == MessageType::ZoneWallController) {
-        return MessageType::ZoneWallController;
-    } else if (firstBit & MessageType::ZoneMasterController == MessageType::ZoneMasterController) {
-        return MessageType::ZoneMasterController;
-    } else if (firstBit == (uint8_t) MessageType::BoardComms1) {
-        return MessageType::BoardComms1;
-    } else if (firstBit == (uint8_t) MessageType::BoardComms2) {
-        return MessageType::BoardComms2;
-    } else if (firstBit == (uint8_t) MessageType::Stat1) {
-        return MessageType::Stat1;
-    } else if (firstBit == (uint8_t) MessageType::Stat2) {
-        return MessageType::Stat2;
-    } else if (firstBit == (uint8_t) MessageType::Stat3) {
-        return MessageType::Stat3;
-    }
-    
-    return MessageType::Unknown;
-}
-
-///////////////////////////////////
 // Actron485::ZoneToMasterMessage
 
 void ZoneToMasterMessage::print() {

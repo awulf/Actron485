@@ -38,12 +38,16 @@ namespace Actron485 {
         }
 
         // If we have mode change (off/on/open) request pending, send it now
-        if (_requestZoneMode[zone-1] != ZoneMode::Ignore) {
-            zoneMessage[zone-1].mode = _requestZoneMode[zone-1];
+        if (_requestZoneMode[zindex(zone)] != ZoneMode::Ignore) {
+            zoneMessage[zindex(zone)].mode = _requestZoneMode[zindex(zone)];
         }
 
-        uint8_t data[zoneMessage[zone-1].messageLength];
-        zoneMessage[zone-1].generate(data);
+        zoneMessage[zindex(zone)].zone = zone;
+        zoneMessage[zindex(zone)].temperature = zoneTemperature[zindex(zone)];
+        zoneMessage[zindex(zone)].setpoint = zoneSetpoint[zindex(zone)];
+
+        uint8_t data[zoneMessage[zindex(zone)].messageLength];
+        zoneMessage[zindex(zone)].generate(data);
 
         serialWrite(true); 
         
@@ -52,6 +56,10 @@ namespace Actron485 {
         }
 
         serialWrite(false);
+
+        zoneMessage[zindex(zone)].print();
+        printOut.println();
+        printOut.println();
     }
 
     void Controller::sendZoneConfigMessage(int zone) {
@@ -62,9 +70,9 @@ namespace Actron485 {
         Serial.println("Send Zone Config");
         ZoneToMasterMessage configMessage;
         configMessage.type = ZoneMessageType::Config;
-        configMessage.zone = zoneMessage[zone-1].zone;
-        configMessage.mode = zoneMessage[zone-1].mode;
-        configMessage.setpoint = zoneMessage[zone-1].setpoint;
+        configMessage.zone = zoneMessage[zindex(zone)].zone;
+        configMessage.mode = zoneMessage[zindex(zone)].mode;
+        configMessage.setpoint = zoneMessage[zindex(zone)].setpoint;
         configMessage.temperature = 0;
         uint8_t data[configMessage.messageLength];
         configMessage.generate(data);
@@ -91,51 +99,51 @@ namespace Actron485 {
             // Out of bounds
             return;
         }
-        if (zoneControlled[zone-1] == false) {
+        if (zoneControlled[zindex(zone)] == false) {
             // We don't care about this, not us
             return;
         }
 
         // Confirm our request to turn on/off the zone has been processed
-        switch (_requestZoneMode[zone-1]) {
+        switch (_requestZoneMode[zindex(zone)]) {
             case ZoneMode::Ignore:
                 break;
             case ZoneMode::Off:
                 if (masterMessage.on == false) {
-                    _requestZoneMode[zone-1] = ZoneMode::Ignore;
+                    _requestZoneMode[zindex(zone)] = ZoneMode::Ignore;
                 }
                 break;
             case ZoneMode::On:
             case ZoneMode::Open: // Master message doesn't show this case, so at this stage we can't tell we switch to open to on and vice versa, so assume it was successful anyway if on
                 if (masterMessage.on == true) {
-                    _requestZoneMode[zone-1] = ZoneMode::Ignore;
+                    _requestZoneMode[zindex(zone)] = ZoneMode::Ignore;
             }
         }
 
         // Update Zone on/off state based on this message (open is same as on, but the master message doesn't know the difference)
-        if (masterMessage.on == true && zoneMessage[zone-1].mode == ZoneMode::Off) {
-            zoneMessage[zone-1].mode = ZoneMode::On;
-        } else if (masterMessage.on == false && zoneMessage[zone-1].mode != ZoneMode::Off) {
-            zoneMessage[zone-1].mode = ZoneMode::Off;
+        if (masterMessage.on == true && zoneMessage[zindex(zone)].mode == ZoneMode::Off) {
+            zoneMessage[zindex(zone)].mode = ZoneMode::On;
+        } else if (masterMessage.on == false && zoneMessage[zindex(zone)].mode != ZoneMode::Off) {
+            zoneMessage[zindex(zone)].mode = ZoneMode::Off;
         }
         
         // Clamp the Setpoint to the allowed range
-        zoneMessage[zone-1].setpoint = max(min(zoneMessage[zone-1].setpoint, masterMessage.maxSetpoint), masterMessage.minSetpoint);
+        zoneMessage[zindex(zone)].setpoint = max(min(zoneMessage[zindex(zone)].setpoint, masterMessage.maxSetpoint), masterMessage.minSetpoint);
 
         ////////////////////////
         // Send our awaited status report/request/config
 
         // Do we want to send a config message this round?
-        if (_sendZoneConfig[zone-1]) {
-            sendZoneConfigMessage(zone-1);
-            _sendZoneConfig[zone-1] = false;
+        if (_sendZoneConfig[zindex(zone)]) {
+            sendZoneConfigMessage(zindex(zone));
+            _sendZoneConfig[zindex(zone)] = false;
         } else {
-            sendZoneMessage(zone-1);
+            sendZoneMessage(zone);
         }
     }
     
     void Controller::processZoneMessage(ZoneToMasterMessage zoneMessage) {
-        if (zoneControlled[zoneMessage.zone] == false) {
+        if (zoneControlled[zindex(zoneMessage.zone)] == false) {
             // We don't care about this, not us
             return;
         }
@@ -144,26 +152,28 @@ namespace Actron485 {
         // asking us to respond
         if (zoneMessage.type == ZoneMessageType::InitZone) {
             sendZoneInitMessage(zoneMessage.zone);
-            _sendZoneConfig[zoneMessage.zone] = true;
+            _sendZoneConfig[zindex(zoneMessage.zone)] = true;
         }
     }
 
     Controller::Controller(uint8_t rxPin, uint8_t txPin, uint8_t writeEnablePin) {
+        _rxPin = rxPin;
+        _txPin = txPin;
+        _writeEnablePin = writeEnablePin;
+
+         Serial1.begin(4800, SERIAL_8N1, rxPin, txPin);
+        _serial = &Serial1;
+
         if (writeEnablePin > 0) {
             pinMode(writeEnablePin, OUTPUT);
             serialWrite(false);
         }
         
-        _rxPin = rxPin;
-        _txPin = txPin;
-        _writeEnablePin = writeEnablePin;
-        Serial1.begin(4800, SERIAL_8N1, rxPin, txPin);
-        _serial = &Serial1;
         setup();
     }
 
     void Controller::setup() {
-        
+        printOutMode = PrintOutMode::ChangedMessages;
     }
 
     bool Controller::sendQueuedCommand() {
@@ -176,15 +186,46 @@ namespace Actron485 {
         setup();
     }
 
+    ///////////////////////////////////
+    // Message type
+
+    MessageType Controller::detectActronMessageType(uint8_t firstByte) {
+        if (firstByte == (uint8_t) MessageType::CommandMasterSetpoint) {
+            return MessageType::CommandMasterSetpoint;
+        } else if (firstByte == (uint8_t) MessageType::CommandFanMode) {
+            return MessageType::CommandFanMode;
+        } else if (firstByte == (uint8_t) MessageType::CommandOperatingMode) {
+            return MessageType::CommandOperatingMode;
+        } else if (firstByte == (uint8_t) MessageType::CommandZoneState) {
+            return MessageType::CommandZoneState;
+        } else if (firstByte == (uint8_t) MessageType::BoardComms1) {
+            return MessageType::BoardComms1;
+        } else if (firstByte == (uint8_t) MessageType::BoardComms2) {
+            return MessageType::BoardComms2;
+        } else if (firstByte == (uint8_t) MessageType::Stat1) {
+            return MessageType::Stat1;
+        } else if (firstByte == (uint8_t) MessageType::Stat2) {
+            return MessageType::Stat2;
+        } else if (firstByte == (uint8_t) MessageType::Stat3) {
+            return MessageType::Stat3;
+        } else if ((firstByte & (uint8_t) MessageType::ZoneWallController) == (uint8_t) MessageType::ZoneWallController) {
+            return MessageType::ZoneWallController;
+        } else if ((firstByte & (uint8_t) MessageType::ZoneMasterController) == (uint8_t) MessageType::ZoneMasterController) {
+            return MessageType::ZoneMasterController;
+        }
+
+        return MessageType::Unknown;
+    }
+
     void Controller::loop() {
         unsigned long now = millis();
         long serialLastReceivedTime = now-_serialBufferReceivedTime;
 
         if (_serialBufferIndex > 0 && serialLastReceivedTime > _serialBufferBreak) {
-            MessageType messageType = detectMessageType(_serialBuffer[0]);
+            MessageType messageType = detectActronMessageType(_serialBuffer[0]);
 
             bool printChangesOnly = printOutMode == PrintOutMode::ChangedMessages;
-            bool printAll = printOutMode == PrintOutMode::AllMessages;
+            bool printAll = (printOutMode == PrintOutMode::AllMessages);
             bool changed = false;
 
             bool popSendQueue = false;
@@ -194,6 +235,7 @@ namespace Actron485 {
             switch (messageType) {
                 case MessageType::Unknown:
                     printOut.println("Unknown Message received");
+                    changed = true;
                     break;
                 case MessageType::CommandMasterSetpoint:
                     // We don't care about this command
@@ -211,19 +253,18 @@ namespace Actron485 {
                     {
                         ZoneSetpointCustomCommand command;
                         command.parse(_serialBuffer);
-                        if (zoneControlled[command.zone]) {
-                            zoneSetpoint[command.zone] = command.temperature;
+                        if (zoneControlled[zindex(command.zone)]) {
+                            zoneSetpoint[zindex(command.zone)] = command.temperature;
                         }
                     }
                     break;
                 case MessageType::ZoneWallController:
                     zone = _serialBuffer[0] & 0x0F;
                     if (0 < zone && zone <= 8) {
-                        zoneMessage[zone-1].parse(_serialBuffer);
-                        changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zone-1], zoneMessage[zone-1].messageLength);
-
+                        zoneMessage[zindex(zone)].parse(_serialBuffer);
+                        changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], zoneMessage[zindex(zone)].messageLength);
                         if (printAll || printChangesOnly && changed) {
-                            zoneMessage[zone-1].print();
+                            zoneMessage[zindex(zone)].print();
                             printOut.println();
                         }
                     }
@@ -231,11 +272,11 @@ namespace Actron485 {
                 case MessageType::ZoneMasterController:
                     zone = _serialBuffer[0] & 0x0F;
                     if (0 < zone && zone <= 8) {
-                        masterToZoneMessage[zone-1].parse(_serialBuffer);
-                        changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zone-1], masterToZoneMessage[zone-1].messageLength);
+                        masterToZoneMessage[zindex(zone)].parse(_serialBuffer);
+                        changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], masterToZoneMessage[zindex(zone)].messageLength);
 
                         if (printAll || printChangesOnly && changed) {
-                            masterToZoneMessage[zone-1].print();
+                            masterToZoneMessage[zindex(zone)].print();
                             printOut.println();
                         }
                     }
@@ -243,7 +284,7 @@ namespace Actron485 {
                 case MessageType::BoardComms1:
                     changed = copyBytes(_serialBuffer, boardComms1Message[boardComms1Index], _serialBufferIndex);
                     boardComms1MessageLength[boardComms1Index] = _serialBufferIndex;
-                    boardComms1Index++;
+                    boardComms1Index = (boardComms1Index + 1)%2;
                     break;
                 case MessageType::BoardComms2:
                     changed = copyBytes(_serialBuffer, boardComms2Message, boardComms2MessageLength);
@@ -275,10 +316,10 @@ namespace Actron485 {
             if (0 < zone && zone <= 8) {
                 switch (messageType) {
                     case MessageType::ZoneWallController:
-                        processZoneMessage(zoneMessage[zone-1]);
+                        processZoneMessage(zoneMessage[zindex(zone)]);
                         break;
                     case MessageType::ZoneMasterController:
-                        processMasterMessage(masterToZoneMessage[zone-1]);
+                        processMasterMessage(masterToZoneMessage[zindex(zone)]);
                         break;
                 }
             }

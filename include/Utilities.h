@@ -2,15 +2,7 @@
 
 namespace Actron485 {
 
-enum class PrintOutMode {
-    StatusOnly,
-    ChangedMessages,
-    AllMessages,
-};
-
-
 static Stream &printOut = Serial;
-static PrintOutMode printOutMode = PrintOutMode::ChangedMessages;
 
 void printByte(uint8_t byte);
 void printBinaryByte(uint8_t byte);

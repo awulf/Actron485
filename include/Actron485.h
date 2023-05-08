@@ -2,6 +2,9 @@
 #include <Arduino.h>
 #include "Actron485Models.h"
 
+/// moves zones 1-8 to array indexed 0-7
+#define zindex(z) z-1
+
 namespace Actron485 {
 
 class Controller {
@@ -89,6 +92,14 @@ public:
     /// @brief Zone 1 - 8 (indexed 0-7), last master to zone message
     MasterToZoneMessage masterToZoneMessage[8];
 
+    /// @brief Message type determined by the first byte
+    /// @param firstByte to from the message
+    /// @return message type
+    MessageType detectActronMessageType(uint8_t firstByte);
+
+    /// @brief Logging/printing mode
+    PrintOutMode printOutMode;
+
     /// @brief Must be called with the main run loop
     void loop();
 
@@ -114,7 +125,7 @@ public:
     // This message varies in length, and occurs up to two times per sequence
     uint8_t boardComms1Index; // records count per sequence
     uint8_t boardComms1MessageLength[2];
-    uint8_t boardComms1Message[2][40];
+    uint8_t boardComms1Message[2][50];
 
     const static uint8_t boardComms2MessageLength = 18;
     uint8_t boardComms2Message[boardComms2MessageLength];
