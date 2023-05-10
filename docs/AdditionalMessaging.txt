@@ -32,11 +32,27 @@ A0... Status
 10: Zone 8 Setpoint Temp. -> Value/2.0°C
 11: Zone On/Off State -> Zone 8-1 in 8 bits
 12: 
-13: 
+13: AC Mode
+    0 - 
+    1 - 
+    2 - 0 Idle, 1 Active   
+    3 - Mode: 00000 = Off
+    4       " 10000 = Fan Only
+    5       " 01100 = Auto
+    6       " 01010 = Cool
+    7       " 01001 = Heat
 14: Master Setpoint Temp. -> Value/2.0 °C
-15: 
-16: 
-17: 
+15: Fan Setting
+    0 - 1 Continuous, 0 Normal
+    1 -  
+    2 - Fan Mode: 10000 = Low
+    3           " 01000 = Medium
+    4           " 00100 = High
+    5           " 00101 = ESP
+    6           "     
+    7 - 1 Idle, 0 Active
+16: Master Temperature (either single wall controller, or average of turned on zones) 
+17: " -> 16bit Value/10.0°C
 18: 
 19: 
 20: 
@@ -84,14 +100,14 @@ E0... Unknown
 06: 
 07: 
 08: 
-09: 
-10: 
-11: 
-12: 
-13: 
-14: 
-15: 
-16: 
+09: Zone 1 Setpoint Temp. -> Value/2.0°C
+10: Zone 2 Setpoint Temp. -> Value/2.0°C
+11: Zone 3 Setpoint Temp. -> Value/2.0°C
+12: Zone 4 Setpoint Temp. -> Value/2.0°C
+13: Zone 5 Setpoint Temp. -> Value/2.0°C
+14: Zone 6 Setpoint Temp. -> Value/2.0°C
+15: Zone 7 Setpoint Temp. -> Value/2.0°C
+16: Zone 8 Setpoint Temp. -> Value/2.0°C
 17: 
 18: 
 19: 
