@@ -42,10 +42,11 @@ namespace Actron485 {
             zoneMessage[zindex(zone)].mode = _requestZoneMode[zindex(zone)];
         }
 
+        zoneMessage[zindex(zone)].type = ZoneMessageType::Normal;
         zoneMessage[zindex(zone)].zone = zone;
         zoneMessage[zindex(zone)].temperature = zoneTemperature[zindex(zone)];
-        zoneMessage[zindex(zone)].setpoint = zoneSetpoint[zindex(zone)];
-
+        zoneMessage[zindex(zone)].setpoint = max(min(zoneSetpoint[zindex(zone)], masterToZoneMessage[zindex(zone)].maxSetpoint), masterToZoneMessage[zindex(zone)].minSetpoint);
+        
         uint8_t data[zoneMessage[zindex(zone)].messageLength];
         zoneMessage[zindex(zone)].generate(data);
 
