@@ -28,7 +28,7 @@ M: 83 F1 54 2C B1 34 26 	1000 0011  1111 0001  0101 0100  0010 1100  1011 0001  
 19:    1 - Damper State 0 -> 5, 3bit. 0 Closed, 5 fully open
 20:  4 0   E.g 0b101 => 5
 21:    1 "
-22:    0 - Spinning Down? This bit turns 1 sometimes when zone is turning off or when all zones temporarily turn on for balancing
+22:    0 - Modulating? This bit turns 1 sometimes when zone is turning off or when all zones temporarily turn on for balancing
 23:    0 - Leading bit for zone temperature at bit 08
     
 24:  2 0 - Zone Heating (otherwise cooling if compressor is active)

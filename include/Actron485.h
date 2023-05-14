@@ -92,6 +92,9 @@ public:
     /// @brief Zone 1 - 8 (indexed 0-7), last master to zone message
     MasterToZoneMessage masterToZoneMessage[8];
 
+    /// @brief State of the AC control message
+    StateMessage stateMessage;
+
     /// @brief Message type determined by the first byte
     /// @param firstByte to from the message
     /// @return message type
@@ -129,8 +132,7 @@ public:
 
     const static uint8_t boardComms2MessageLength = 18;
     uint8_t boardComms2Message[boardComms2MessageLength];
-    const static uint8_t stat1MessageLength = 23;
-    uint8_t stat1Message[stat1MessageLength];
+    uint8_t stateMessageRaw[StateMessage::stateMessageLength];
     const static uint8_t stat2MessageLength = 19;
     uint8_t stat2Message[19];
     const static uint8_t stat3MessageLength = 32;

@@ -36,11 +36,11 @@ A0... Status
     0 - 
     1 - 
     2 - 0 Idle, 1 Active   
-    3 - Mode: 00000 = Off
+    3 - Mode: 00xxx = Off - Off can store it's last used compresstor operating mode, e.g. 00010 for off-cool
     4       " 10000 = Fan Only
-    5       " 01100 = Auto
-    6       " 01010 = Cool
-    7       " 01001 = Heat
+    5       " 0x100 = Auto
+    6       " 0x010 = Cool
+    7       " 0x001 = Heat
 14: Master Setpoint Temp. -> Value/2.0 °C
 15: Fan Setting
     0 - 1 Continuous, 0 Normal

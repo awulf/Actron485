@@ -126,7 +126,7 @@ struct MasterToZoneMessage {
     bool heating;
 
     // A bit that turns 1 when sometimes turning off a zone or when all zones turn on for balancing
-    bool maybeTurningOff;
+    bool maybeAdjusting;
 
     // Zone is being actively serviced by the compressor / zone requesting compressor
     bool compressorActive;
@@ -259,6 +259,42 @@ struct ZoneSetpointCustomCommand {
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 2 bytes long
     void generate(uint8_t data[2]);
+};
+
+struct StateMessage {
+    const static uint8_t stateMessageLength = 23;
+
+    /// @brief setpoint temperature of all zones 1-8 indexed 0-7
+    double zoneSetpoint[8];
+    /// @brief false if off, true if on, zones 1-8 indexed 0-7
+    bool zoneOn[8];
+
+    /// @brief Average tempeature of all active zones, where ever temperature sensors are
+    double temperature;
+
+    /// @brief System setpoint temperature, which also limits individual zone temperature setpoints
+    double setpoint;
+
+    /// @brief Mode the system is operating in
+    OperatingMode operatingMode;
+    /// @brief If system is off this is the last mode it operated in, thus can be used to turn the system back on to last used state
+    OperatingMode lastOperatingMode;
+    /// @brief True if system is actively cooling/heating, false if idle
+    bool systemActive;
+
+    /// @brief System fan mode (not including continuous mode)
+    FanMode fanMode;
+    /// @brief True if system is in continuous mode
+    bool continuousFan;
+    /// @brief True if system fan is running, false if off
+    bool fanActive;
+
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 2 bytes
+    void parse(uint8_t data[2]);
 };
 
 }

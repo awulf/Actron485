@@ -294,7 +294,13 @@ namespace Actron485 {
                     changed = copyBytes(_serialBuffer, boardComms2Message, boardComms2MessageLength);
                     break;
                 case MessageType::Stat1:
-                    changed = copyBytes(_serialBuffer, stat1Message, stat1MessageLength);
+                    changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
+                    stateMessage.parse(_serialBuffer);
+
+                    if (printAll || printChangesOnly && changed) {
+                        stateMessage.print();
+                        printOut.println();
+                    }
                     break;
                 case MessageType::Stat2:
                     changed = copyBytes(_serialBuffer, stat2Message, stat2MessageLength);

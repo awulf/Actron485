@@ -97,6 +97,7 @@ void ZoneToMasterMessage::generate(uint8_t data[5]) {
     if (type == ZoneMessageType::Normal) {
         int16_t rawTemp = zoneTempToMaster(temperature);
         int16_t rawTempValue = rawTemp - (rawTemp < 0 ? -512 : 512);
+        temperaturePreAdjustment = (250 - rawTemp) * 0.1; // Store for reference
 
         // Byte 3
         data[2] = (mode != ZoneMode::Off ? 0b10000000 : 0b0) | (mode == ZoneMode::Open ? 0b01000000 : 0b0) | (rawTempValue >> 8 & 0b00000011);
@@ -176,20 +177,16 @@ void MasterToZoneMessage::print() {
     printOut.print("-");
     printOut.print(maxSetpoint);
 
-    printOut.print(", Compr. Mode: ");
-    printOut.print(compressorMode ? "On " : "Off");
-    if (compressorMode) {
-        printOut.print(heating ? "Heating" : "Cooling");
-    }
-
-    if (maybeTurningOff) {
-        printOut.print("??Maybe Turning Off??");
-    }
-
     printOut.print(", Zone: ");
     printOut.print(on ? "On" : "Off");
 
     if (on) {
+        printOut.print(", Compr. Mode: ");
+        printOut.print(compressorMode ? "On " : "Off");
+        if (compressorMode) {
+            printOut.print(heating ? "Heating" : "Cooling");
+        }
+
         if (fanMode) {
             printOut.print(", Fan Mode");
         } else if (compressorActive) {
@@ -200,6 +197,10 @@ void MasterToZoneMessage::print() {
     printOut.print(", Damper Pos: ");
     printOut.print((int)((double)damperPosition/5.0*100.0));
     printOut.print("%");
+
+    if (maybeAdjusting) {
+        printOut.print(", ??Adjusting??");
+    }
 }
 
 void MasterToZoneMessage::parse(uint8_t data[7]) {
@@ -215,7 +216,7 @@ void MasterToZoneMessage::parse(uint8_t data[7]) {
 
     on = (data[2] & 0b01000000) == 0b01000000;
 
-    maybeTurningOff = (data[2] & 0b00000010) == 0b00000010;
+    maybeAdjusting = (data[2] & 0b00000010) == 0b00000010;
 
     compressorMode = (data[2] & 0b10000000) == 0b10000000;
 
@@ -252,7 +253,7 @@ void MasterToZoneMessage::generate(uint8_t data[7]) {
 
     // Byte 3, first bit ac in compressor mode, second zone on. third unknown, 4-6 damper pos, 7 maybe turning off?, 8 first bit for zone temp
     data[2] = (compressorMode ? 0b10000000 : 0b0) | (on ? 0b01000000 : 0b0) | (/*Unknown*/0b0) | 
-              (0b00011100 & (damperPosition << 2)) | (maybeTurningOff ? 0b00000010 : 0b0) | (0b00000001 & (zoneTempRaw >> 8));
+              (0b00011100 & (damperPosition << 2)) | (maybeAdjusting ? 0b00000010 : 0b0) | (0b00000001 & (zoneTempRaw >> 8));
 
     // Byte 4, heating mode, unknown, min setpoint lower 6
     data[3] = (heating ? 0b10000000 : 0b0) | (/*Unknown*/0b0) | ((uint8_t)(minSetpoint * 2.0)) & 0b00111111;
@@ -408,6 +409,134 @@ void ZoneSetpointCustomCommand::generate(uint8_t data[3]) {
     data[0] = (uint8_t) MessageType::CustomCommandChangeZoneSetpoint;
     data[1] = zone;
     data[2] = (uint8_t) round(temperature * 2);
+}
+
+///////////////////////////////////
+// Actron485::StateMessage
+
+void StateMessage::print() {
+    printOut.print("State: ");
+    printOut.print("Operating Mode: ");
+    switch (operatingMode) {
+        case OperatingMode::Off:
+            printOut.print("Off");
+            switch (lastOperatingMode) {
+                case OperatingMode::Auto:
+                    printOut.print("-Auto");
+                    break;
+                case OperatingMode::Cool:
+                    printOut.print("-Cool");
+                    break;
+                case OperatingMode::Heat:
+                    printOut.print("-Heat");
+                    break;
+                default:
+                    printOut.print("-Fan Only");
+                    break;
+            }
+            break;
+        case OperatingMode::FanOnly:
+            printOut.print("Fan Only");
+            break;
+        case OperatingMode::Auto:
+            printOut.print("Auto");
+            break;
+        case OperatingMode::Cool:
+            printOut.print("Cool");
+            break;
+        case OperatingMode::Heat:
+            printOut.print("Heat");
+            break;
+    }
+    printOut.print(" - ");
+    if (systemActive) {
+        printOut.print("Active");
+    } else {
+        printOut.print("Idle");
+    }
+
+    printOut.print(", Fan Mode: ");
+    switch (fanMode) {
+        case FanMode::Off:
+            printOut.print("Off");
+            break;
+        case FanMode::Low:
+            printOut.print("Low");
+            break;
+        case FanMode::Medium:
+            printOut.print("Medium");
+            break;
+        case FanMode::High:
+            printOut.print("High");
+            break;
+        case FanMode::Esp:
+            printOut.print("ESP");
+            break;
+    }
+    if (continuousFan) {
+        printOut.print(" Continuous");
+    } 
+    printOut.print(" - ");
+    if (fanActive) {
+        printOut.print("Active");
+    } else {
+        printOut.print("Idle");
+    }
+
+    printOut.print(", Setpoint: ");
+    printOut.print(setpoint);
+
+    printOut.print(", Temperature: ");
+    printOut.print(temperature);
+
+    printOut.print(", Zones:");
+    for (int i=0; i<8; i++) {
+        printOut.print(" ");
+        printOut.print(i+1);
+        printOut.print(":");
+        printOut.print((zoneOn[i] ? "On" : "Off"));
+    }
+}
+
+void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
+    for (int i=0; i<8; i++) {
+        zoneSetpoint[i] = (double)data[i+3] / 2.0;
+        zoneOn[i] = (data[11] & (1 << i)) >> i;
+    }
+
+    setpoint = (double)data[14] / 2.0;
+
+    temperature = ((double) (((uint16_t)data[16] << 8) | data[17])) / 10.0;
+    
+    uint8_t fanModeRaw = (data[15] & 0b111110) >> 1;
+    switch (fanModeRaw) {
+        case 0b00000:
+            fanMode = FanMode::Off;
+            break;
+        case 0b10000:
+            fanMode = FanMode::Low;
+            break;
+        case 0b01000:
+            fanMode = FanMode::Medium;
+            break;
+        case 0b00100:
+            fanMode = FanMode::High;
+            break;
+        case 0b00101:
+            fanMode = FanMode::Esp;
+            break;
+    }
+
+    continuousFan = (data[15] & 0b10000000) == 0b10000000;
+    fanActive = (data[15] & 0b1) == 0; // 0 == Active, 1 == Idle
+
+    uint8_t operatingModeRaw = (data[13] & 0b00011111);
+    // If the system is off show operating mode as such
+    operatingMode = OperatingMode(((operatingModeRaw & 0b11000) == 0) ? 0 : operatingModeRaw);
+    // And note what it has been in the past
+    lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b1000);
+
+    systemActive = data[13] & 0b10000000 == 0b10000000;
 }
 
 }
