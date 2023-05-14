@@ -32,7 +32,7 @@ void setup() {
   // Set the temperature setpoint
   actronController.zoneSetpoint[zindex(3)] = 22;
 
-  actronController.printOutMode = Actron485::PrintOutMode::ChangedMessages;
+  actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
 }
 
 void loop() {
