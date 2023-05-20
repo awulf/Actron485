@@ -152,6 +152,8 @@ struct MasterToZoneMessage {
 // General AC Commands
 
 struct MasterSetpointCommand {
+    static const uint8_t messageLength = 2;
+
     // In °C 16-30° in 0.5° increments
     double temperature;
     
@@ -214,11 +216,14 @@ struct ZoneStateCommand {
 };
 
 enum class OperatingMode: uint8_t {
-    Off = 0b00000000,
-    FanOnly = 0b00010000,
-    Auto = 0b00001100,
-    Cool = 0b00001010,
-    Heat = 0b00001001
+    Off =       0b00000000,
+    OffAuto =   0b00000100,
+    OffCool =   0b00000010,
+    OffHeat =   0b00000001,
+    FanOnly =   0b00010000,
+    Auto =      0b00001100,
+    Cool =      0b00001010,
+    Heat =      0b00001001
 };
 
 struct OperatingModeCommand {
@@ -248,6 +253,9 @@ struct ZoneSetpointCustomCommand {
 
     // Zone to change
     uint8_t zone;
+
+    // Adjust Master to allow for the new temperature
+    bool adjustMaster;
     
     /// @brief print state to printOut
     void print();

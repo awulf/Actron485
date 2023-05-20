@@ -45,8 +45,10 @@ namespace Actron485 {
         zoneMessage[zindex(zone)].type = ZoneMessageType::Normal;
         zoneMessage[zindex(zone)].temperature = zoneTemperature[zindex(zone)];
 
-        // Enforce, and set based on setpoint range limit
-        zoneSetpoint[zindex(zone)] = max(min(zoneSetpoint[zindex(zone)], masterToZoneMessage[zindex(zone)].maxSetpoint), masterToZoneMessage[zindex(zone)].minSetpoint);
+        // Enforce, and set based on setpoint range limit, if we aren't currently adjusting the master setpoint
+        if (!sendSetpointCommand) {
+            zoneSetpoint[zindex(zone)] = max(min(zoneSetpoint[zindex(zone)], masterToZoneMessage[zindex(zone)].maxSetpoint), masterToZoneMessage[zindex(zone)].minSetpoint);
+        }
         zoneMessage[zindex(zone)].setpoint = zoneSetpoint[zindex(zone)];
         
         uint8_t data[zoneMessage[zindex(zone)].messageLength];
@@ -137,10 +139,6 @@ namespace Actron485 {
             zoneMessage[zindex(zone)].zone = zone;
             zoneMessage[zindex(zone)].temperature = masterMessage.temperature;
             zoneMessage[zindex(zone)].setpoint = masterMessage.setpoint;
-
-        } else {
-            // Clamp the Setpoint to the allowed range
-            zoneMessage[zindex(zone)].setpoint = max(min(zoneMessage[zindex(zone)].setpoint, masterMessage.maxSetpoint), masterMessage.minSetpoint);
         }
 
         ////////////////////////
@@ -195,7 +193,58 @@ namespace Actron485 {
     }
 
     bool Controller::sendQueuedCommand() {
-        return false;
+        uint8_t data[5];
+        int send = 0;
+
+        // We can only send one command at a time, per sequence
+        // start with the most important ones and work our way down
+        if (sendOperatingModeCommand) {
+            printOut.print("Send: ");
+            sendOperatingModeCommand = false;
+            nextOperatingModeCommand.generate(data);
+            nextOperatingModeCommand.print();
+            send = nextOperatingModeCommand.messageLength;
+            
+        } else if (sendZoneStateCommand) {
+            printOut.print("Send: ");
+            sendZoneStateCommand = false;
+            nextZoneStateCommand.generate(data);
+            nextZoneStateCommand.print();
+            send = nextZoneStateCommand.messageLength;
+            
+        } else if (sendFanModeCommand) {
+            printOut.print("Send: ");
+            sendFanModeCommand = false;
+            nextFanModeCommand.generate(data);
+            nextFanModeCommand.print();
+            send = nextFanModeCommand.messageLength;
+            
+        } else if (sendSetpointCommand) {
+            printOut.print("Send: ");
+            sendSetpointCommand = false;
+            nextSetpointCommand.generate(data);
+            nextSetpointCommand.print();
+            send = nextSetpointCommand.messageLength;
+            
+        } else if (sendZoneSetpointCustomCommand) {
+            printOut.print("Send: ");
+            sendZoneSetpointCustomCommand = false;
+            nextZoneSetpointCustomCommand.generate(data);
+            nextZoneSetpointCustomCommand.print();
+            send = nextZoneSetpointCustomCommand.messageLength;
+        }
+
+        if (send > 0) {
+            serialWrite(true); 
+            
+            for (int i=0; i<send; i++) {
+                _serial->write(data[i]);
+            }
+
+            serialWrite(false);
+        }
+        
+        return send > 0;
     }
 
     Controller::Controller(Stream &stream, uint8_t writeEnablePin) {
@@ -363,6 +412,176 @@ namespace Actron485 {
             _serialBufferIndex++;
             _serialBufferReceivedTime = millis();
         }
+    }
+
+     //////////////////////
+    /// Convenient functions, that are the typical use for this module
+
+    // Setup
+
+    void Controller::setControlZone(uint8_t zone, bool control) {
+        zoneControlled[zindex(zone)] = control;
+    }
+
+    bool Controller::getControlZone(uint8_t zone) {
+        return zoneControlled[zindex(zone)];
+    }
+
+    // System Control
+
+    void Controller::setSystemOn(bool on) {
+        if (stateMessage.operatingMode == OperatingMode::Off && on) {
+            // If all off, pressing on turns on fan mode
+            nextOperatingModeCommand.mode = OperatingMode::FanOnly;
+        } else if (stateMessage.operatingMode == OperatingMode::FanOnly && on == false) {
+            // If fan mode, turning off, sets to fully off
+            nextOperatingModeCommand.mode = OperatingMode::Off;
+        } else {
+            // Set the on/off bit
+            nextOperatingModeCommand.mode = OperatingMode(((uint8_t) stateMessage.operatingMode) & (on ? 0b11111111 : 0b11110111));
+        }
+        sendOperatingModeCommand = true;
+    }
+
+    bool Controller::getSystemOn() {
+        return stateMessage.operatingMode != OperatingMode::Off;
+    }
+
+    void Controller::setFanSpeed(FanMode fanSpeed) {
+        bool continuous = getContinuousFanMode();
+        switch (fanSpeed) {
+            case FanMode::Low:
+                nextFanModeCommand.fanMode = continuous ? FanMode::LowContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+            case FanMode::Medium:
+                nextFanModeCommand.fanMode = continuous ? FanMode::MediumContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+            case FanMode::High:
+                nextFanModeCommand.fanMode = continuous ? FanMode::HighContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+            case FanMode::Esp:
+                nextFanModeCommand.fanMode = continuous ? FanMode::EspContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+        }
+    }
+
+    FanMode Controller::getFanSpeed() {
+        return stateMessage.fanMode;
+    }
+
+    void Controller::setContinuousFanMode(bool on) {
+        FanMode fanSpeed = getFanSpeed();
+        switch (fanSpeed) {
+            case FanMode::Low:
+                nextFanModeCommand.fanMode = on ? FanMode::LowContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+            case FanMode::Medium:
+                nextFanModeCommand.fanMode = on ? FanMode::MediumContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+            case FanMode::High:
+                nextFanModeCommand.fanMode = on ? FanMode::HighContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+            case FanMode::Esp:
+                nextFanModeCommand.fanMode = on ? FanMode::EspContinuous : fanSpeed;
+                sendFanModeCommand = true;
+                break;
+        }
+    }
+
+    bool Controller::getContinuousFanMode() {
+        return stateMessage.continuousFan;
+    }
+
+    void Controller::setOperatingMode(OperatingMode mode) {
+        OperatingMode currentMode = stateMessage.operatingMode;
+        if (mode == OperatingMode::Off) {
+            setSystemOn(false);
+        } else {
+            nextOperatingModeCommand.mode = mode;
+            sendOperatingModeCommand = true;
+        }
+    }
+
+    OperatingMode Controller::getOperatingMode() {
+        return stateMessage.lastOperatingMode;
+    }
+
+    void Controller::setMasterSetpoint(double temperature) {
+        nextSetpointCommand.temperature = temperature;
+        sendSetpointCommand = true;
+    }
+    
+    double Controller::getMasterSetpoint() {
+        return stateMessage.setpoint;
+    }
+
+    bool Controller::isSystemIdle() {
+        return stateMessage.systemActive == false;
+    }
+
+    bool Controller::isFanIdle() {
+        return stateMessage.fanActive == false;
+    }
+
+    /// Zone Control
+
+    void Controller::setZoneOn(uint8_t zone, bool on) {
+        for (int i=0; i<8; i++) {
+            nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : stateMessage.zoneOn[i]);
+        }
+        sendZoneStateCommand = true;
+    }
+
+    bool Controller::getZoneOnState(uint8_t zone) {
+        return stateMessage.zoneOn[zindex(zone)];
+    }
+
+    void Controller::setZoneSetpointTemperature(uint8_t zone, double temperature, bool adjustMaster) {
+        if (zoneControlled[zindex(zone)] == true) {
+            // Check if we need to adjust the master first
+            if (adjustMaster) {
+                double minAllowed = masterToZoneMessage[zindex(zone)].minSetpoint;
+                double maxAllowed = masterToZoneMessage[zindex(zone)].maxSetpoint;
+                double diff = 0;
+                if (temperature<minAllowed) {
+                    diff = minAllowed-temperature;
+                } else if (temperature>maxAllowed) {
+                    diff = temperature-maxAllowed;
+                }
+                // If the difference is not 0 adjust
+                if (diff != 0) {
+                    double newTempeature = getMasterSetpoint() + diff;
+                    setMasterSetpoint(newTempeature);
+                }
+            }
+            zoneSetpoint[zindex(zone)] = temperature;
+
+        } else {
+            // Send the custom zone setpoint message, the official 
+            nextZoneSetpointCustomCommand.temperature = temperature;
+            nextZoneSetpointCustomCommand.adjustMaster = adjustMaster;
+            nextZoneSetpointCustomCommand.zone = zone;
+            sendZoneSetpointCustomCommand = true;
+        }
+    }
+
+    double Controller::getZoneSetpointTempeature(uint8_t zone) {
+        return stateMessage.zoneSetpoint[zindex(zone)];
+    }
+
+    void Controller::setZoneCurrentTemperature(uint8_t zone, double temperature) {
+        zoneTemperature[zindex(zone)] = temperature;
+    }
+
+    double Controller::getZoneCurrentTemperature(uint8_t zone) {
+        return zoneMessage[zindex(zone)].temperature;
     }
 
 }

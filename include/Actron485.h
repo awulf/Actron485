@@ -111,13 +111,20 @@ public:
     // priority in the order listed in the declarations below
 
     /// @brief setpoint command, sent on next cycle
-    OperatingModeCommand queuedOperatingModeCommand;
+    OperatingModeCommand nextOperatingModeCommand;
+    bool sendOperatingModeCommand;
     /// @brief zone state command, sent on next cycle, for self controlled zones best to use ZoneToMasterMessage
-    ZoneStateCommand queuedZoneStateCommand;
+    ZoneStateCommand nextZoneStateCommand;
+    bool sendZoneStateCommand;
     /// @brief setpoint command, sent on next cycle
-    MasterSetpointCommand queueSetpointCommand;
+    MasterSetpointCommand nextSetpointCommand;
+    bool sendSetpointCommand;
     /// @brief fan mode command, sent on next cycle
-    FanModeCommand queueFanModeCommand;
+    FanModeCommand nextFanModeCommand;
+    bool sendFanModeCommand;
+    /// @brief zone setpoint command
+    ZoneSetpointCustomCommand nextZoneSetpointCustomCommand;
+    bool sendZoneSetpointCustomCommand;
 
     //////////////////////
     /// Below are last stored messages. Some of those assumed types, better understanding still required
@@ -137,6 +144,113 @@ public:
     uint8_t stat2Message[19];
     const static uint8_t stat3MessageLength = 32;
     uint8_t stat3Message[32];
+
+    //////////////////////
+    /// Convenient functions, that are the typical use for this module
+
+    // Setup
+
+    /// @brief set the specified zone to be controlled by this module
+    /// turning a zone on to be controlled will configure this module to report tempeature reading and
+    /// control the setpoint temperature.
+    /// *** Only one zone controller can be active for a given zone ***
+    /// This module can control mutliple zones at once
+    /// @param zone to set
+    /// @param control true to enable, false otherwise
+    void setControlZone(uint8_t zone, bool control);
+
+    /// @brief get if the specified zone is controlled by this controller
+    /// @param zone
+    /// @return true if this module is controlling the specified zone
+    bool getControlZone(uint8_t zone);
+
+    // System Control
+
+    /// @brief turn the ac system on/off, when turning on, should resture last operating mode
+    /// @param on true to turn on, false to turn off
+    void setSystemOn(bool on);
+
+    /// @brief is system turned on/off
+    /// @returns true if on, false otherwise
+    bool getSystemOn();
+
+    /// @brief set the system fan speed
+    /// @param speed to set from Low, Medium, High, ESP (Auto), other options are ignored
+    void setFanSpeed(FanMode fanSpeed);
+
+    /// @brief get the system fan speed
+    /// @returns returns Off, Low, Medium, High, ESP (Auto)
+    FanMode getFanSpeed();
+
+    /// @brief set continuous fan mode
+    /// @param on sets it to on, false to normal mode
+    void setContinuousFanMode(bool on);
+
+    /// @brief get if continouis fan mode is on or off
+    /// @returns true if on, false otherwise
+    bool getContinuousFanMode();
+
+    /// @brief adjusts the operating mode of the system, can also be used to turn off the system
+    /// turning off will try to preserve the state
+    /// @param mode Off, Fan Only, Auto, Cool, Heat. Use OffAuto, OffCool, OffHeat to change modes without turning on the system
+    void setOperatingMode(OperatingMode mode);
+    
+    /// @brief get the operating mode of the system, as expected when the on button is pressed if not on
+    /// @return the operating mode: Fan Only, Auto, Cool, Heat
+    OperatingMode getOperatingMode();
+
+    /// @brief set the master setpoint tempeature
+    /// @param temperature to set in °C, in 0.5° increments
+    void setMasterSetpoint(double temperature);
+
+    /// @brief get the master setpoint tempeature
+    /// @returns temperature in °C
+    double getMasterSetpoint();
+
+    /// @brief if the compressor is idle, this can be if AC is on but not active, or off.
+    /// @return true if idle, false otherwise
+    bool isSystemIdle();
+
+    /// @brief if the fan is idle, this can be if AC is on but not active, or off
+    /// @return true if fan idle, false otherwise
+    bool isFanIdle();
+
+    /// Zone Control
+
+    /// @brief adjust the specified zone to be
+    /// @param zone to adjust
+    /// @param on true, false for off
+    void setZoneOn(uint8_t zone, bool on);
+
+    /// @brief get zone on/off state
+    /// @param zone to query
+    /// @returns true if on, false otherwise
+    bool getZoneOnState(uint8_t zone);
+
+    /// @brief adjust the zones setpoint to the specified temperature for Ultima systems
+    /// *** This only works for zones controlled by this controller module ***
+    /// If the zone is controlled by this device, it will be adjusted directly
+    /// If the zone is controller by another device, but using this module, it will send a request
+    /// @param zone to adjust
+    /// @param temperature to set in °C, in 0.5° increments
+    /// @param adjustMaster to adjust master to the allowed range
+    void setZoneSetpointTemperature(uint8_t zone, double temperature, bool adjustMaster);
+
+    /// @brief get zone set point temperature for Ultima systems
+    /// @param zone to query
+    /// @returns temperature in °C
+    double getZoneSetpointTempeature(uint8_t zone);
+
+    /// @brief set the current temperature for zones controlled by this module
+    /// @param zone to adjust
+    /// @param temperature to set in °C, in 0.1° increments
+    void setZoneCurrentTemperature(uint8_t zone, double temperature);
+
+    /// @brief get zone current temperature for Ultima systems
+    /// @param zone to query
+    /// @returns temperature in °C
+    double getZoneCurrentTemperature(uint8_t zone);
+
 };
 
 }

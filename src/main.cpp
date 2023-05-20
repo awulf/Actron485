@@ -27,10 +27,10 @@ void setup() {
   Serial.begin(115200);
 
   // We are controlling zone 3
-  actronController.zoneControlled[zindex(3)] = true;
+  actronController.setControlZone(3, true);
 
   // Set the temperature setpoint
-  actronController.zoneSetpoint[zindex(3)] = 22;
+  actronController.setZoneSetpointTemperature(3, 22, false);
 
   actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
 }
@@ -43,13 +43,11 @@ void loop() {
 
   if (temperatureReadTime == 0 || (now - temperatureReadTime) > 10000) {
     BMESensor.refresh();                                                  // read current sensor data
-    // sprintf(bufout,"%c[1;0H",ASCII_ESC);
-    // Serial.print(bufout);
-
+`   
     Serial.print("Temperature: ");
     Serial.print(BMESensor.temperature);                                  // display temperature in Celsius
     Serial.println("C");
-    actronController.zoneTemperature[zindex(3)] = BMESensor.temperature;
+    actronController.setZoneCurrentTemperature(3, BMESensor.temperature);
 
     Serial.print("Humidity:    ");
     Serial.print(BMESensor.humidity);                                     // display humidity in %   

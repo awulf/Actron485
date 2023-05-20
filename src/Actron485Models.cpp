@@ -397,18 +397,23 @@ void ZoneSetpointCustomCommand::print() {
     printOut.print(zone);
     printOut.print(", Temperature Setpoint: ");
     printOut.print(temperature);
+    if (adjustMaster) {
+        printOut.print(", Force Master SP");
+    }
     printOut.println();
 }
 
 void ZoneSetpointCustomCommand::parse(uint8_t data[3]) {
     zone = data[1];
     temperature = ((double) data[2]) / 2.0;
+    adjustMaster = (bool) data[3];
 }
 
 void ZoneSetpointCustomCommand::generate(uint8_t data[3]) {
     data[0] = (uint8_t) MessageType::CustomCommandChangeZoneSetpoint;
     data[1] = zone;
     data[2] = (uint8_t) round(temperature * 2);
+    data[3] = (uint8_t) adjustMaster;
 }
 
 ///////////////////////////////////
@@ -534,7 +539,7 @@ void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
     // If the system is off show operating mode as such
     operatingMode = OperatingMode(((operatingModeRaw & 0b11000) == 0) ? 0 : operatingModeRaw);
     // And note what it has been in the past
-    lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b1000);
+    lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
 
     systemActive = data[13] & 0b10000000 == 0b10000000;
 }
