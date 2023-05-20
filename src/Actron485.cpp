@@ -321,7 +321,7 @@ namespace Actron485 {
                         ZoneSetpointCustomCommand command;
                         command.parse(_serialBuffer);
                         if (zoneControlled[zindex(command.zone)]) {
-                            zoneSetpoint[zindex(command.zone)] = command.temperature;
+                            setZoneSetpointTemperature(command.zone, command.temperature, command.adjustMaster);
                         }
                     }
                     break;
