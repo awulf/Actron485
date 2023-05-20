@@ -43,7 +43,6 @@ namespace Actron485 {
         }
 
         zoneMessage[zindex(zone)].type = ZoneMessageType::Normal;
-        zoneMessage[zindex(zone)].zone = zone;
         zoneMessage[zindex(zone)].temperature = zoneTemperature[zindex(zone)];
 
         // Enforce, and set based on setpoint range limit
@@ -124,15 +123,25 @@ namespace Actron485 {
             }
         }
 
+        // If zone is set to 0, we need to copy some values from master
+        bool copyZoneSate = (zoneMessage[zindex(zone)].zone == 0);
+
         // Update Zone on/off state based on this message (open is same as on, but the master message doesn't know the difference)
-        if (masterMessage.on == true && zoneMessage[zindex(zone)].mode == ZoneMode::Off) {
+        if (masterMessage.on == true && zoneMessage[zindex(zone)].mode == ZoneMode::Off || copyZoneSate) {
             zoneMessage[zindex(zone)].mode = ZoneMode::On;
-        } else if (masterMessage.on == false && zoneMessage[zindex(zone)].mode != ZoneMode::Off) {
+        } else if (masterMessage.on == false && zoneMessage[zindex(zone)].mode != ZoneMode::Off || copyZoneSate) {
             zoneMessage[zindex(zone)].mode = ZoneMode::Off;
         }
         
-        // Clamp the Setpoint to the allowed range
-        zoneMessage[zindex(zone)].setpoint = max(min(zoneMessage[zindex(zone)].setpoint, masterMessage.maxSetpoint), masterMessage.minSetpoint);
+        if (copyZoneSate) {
+            zoneMessage[zindex(zone)].zone = zone;
+            zoneMessage[zindex(zone)].temperature = masterMessage.temperature;
+            zoneMessage[zindex(zone)].setpoint = masterMessage.setpoint;
+
+        } else {
+            // Clamp the Setpoint to the allowed range
+            zoneMessage[zindex(zone)].setpoint = max(min(zoneMessage[zindex(zone)].setpoint, masterMessage.maxSetpoint), masterMessage.minSetpoint);
+        }
 
         ////////////////////////
         // Send our awaited status report/request/config
@@ -178,6 +187,11 @@ namespace Actron485 {
 
     void Controller::setup() {
         printOutMode = PrintOutMode::ChangedMessages;
+
+        // Set to ignore
+        for (int i=0; i<8; i++) {
+            _requestZoneMode[i] = ZoneMode::Ignore;
+        }
     }
 
     bool Controller::sendQueuedCommand() {

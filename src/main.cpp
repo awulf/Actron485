@@ -41,7 +41,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   unsigned long now = millis();
 
-  if ((now - temperatureReadTime) > 10000) {
+  if (temperatureReadTime == 0 || (now - temperatureReadTime) > 10000) {
     BMESensor.refresh();                                                  // read current sensor data
     // sprintf(bufout,"%c[1;0H",ASCII_ESC);
     // Serial.print(bufout);
