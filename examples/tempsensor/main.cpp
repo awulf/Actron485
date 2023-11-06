@@ -1,5 +1,5 @@
-#include "Utilities.h"
-#include "Actron485.h"
+#include <Actron485.h>
+#include <../include/Actron485.h>
 #include <Wire.h>                                                       // required by BME280 library
 #include <BME280_t.h>    
 
@@ -43,7 +43,7 @@ void loop() {
 
   if (temperatureReadTime == 0 || (now - temperatureReadTime) > 10000) {
     BMESensor.refresh();                                                  // read current sensor data
-`   
+
     Serial.print("Temperature: ");
     Serial.print(BMESensor.temperature);                                  // display temperature in Celsius
     Serial.println("C");

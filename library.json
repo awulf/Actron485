@@ -1,0 +1,25 @@
+{
+    "name": "Actron485",
+    "version": "0.5.0",
+    "description": "PlatformIO library to control some ducted Actron Air Conditioners directly via the RS485 bus",
+    "keywords": "actron",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/awulf/actron485.git"
+    },
+    "authors":
+    [
+      {
+        "name": "Andreas Wulf",
+        "url": "https://github.com/awulf",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/awulf/actron485",
+    "dependencies": {
+    },
+    "frameworks": "Arduino",
+    "platforms": "*"
+  }
