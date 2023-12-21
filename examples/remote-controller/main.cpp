@@ -19,7 +19,7 @@ void setup() {
   Serial.begin(115200);
 
   actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
-  
+
 }
 
 void loop() {
@@ -44,6 +44,9 @@ void loop() {
     }
     Serial.println();
     
+
+    actronController.setZoneSetpointTemperature(3, 24, false);
+    // actronController.setZoneOn(1, true);
 
     // Serial.print(BMESensor.temperature);                                  // display temperature in Celsius
     // Serial.println("C");

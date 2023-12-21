@@ -125,6 +125,9 @@ public:
     /// @brief zone setpoint command
     ZoneSetpointCustomCommand nextZoneSetpointCustomCommand;
     bool sendZoneSetpointCustomCommand;
+    /// @brief send a master message allows tricking zone wall controllers
+    MasterToZoneMessage nextMasterToZoneMessage[8];
+    bool sendMasterToZoneMessage[8];
 
     //////////////////////
     /// Below are last stored messages. Some of those assumed types, better understanding still required
@@ -229,6 +232,15 @@ public:
 
     /// @brief adjust the zones setpoint to the specified temperature for Ultima systems
     /// *** This only works for zones controlled by this controller module ***
+    /// If the zone is controlled by this device, it will be adjusted directly
+    /// If the zone is controller by another device, but using this module, it will send a request
+    /// @param zone to adjust
+    /// @param temperature to set in °C, in 0.5° increments
+    /// @param adjustMaster to adjust master to the allowed range
+    void setZoneSetpointTemperatureCustom(uint8_t zone, double temperature, bool adjustMaster);
+
+    /// @brief adjust the zones setpoint to the specified temperature for Ultima systems
+    /// a hack by sending an out of sync message coercing the zone to change temperature
     /// If the zone is controlled by this device, it will be adjusted directly
     /// If the zone is controller by another device, but using this module, it will send a request
     /// @param zone to adjust

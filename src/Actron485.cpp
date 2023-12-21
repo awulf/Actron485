@@ -193,7 +193,7 @@ namespace Actron485 {
     }
 
     bool Controller::sendQueuedCommand() {
-        uint8_t data[5];
+        uint8_t data[7];
         int send = 0;
 
         // We can only send one command at a time, per sequence
@@ -232,6 +232,20 @@ namespace Actron485 {
             nextZoneSetpointCustomCommand.generate(data);
             nextZoneSetpointCustomCommand.print();
             send = nextZoneSetpointCustomCommand.messageLength;
+
+        } else {
+            for (int i=0; i<8; i++) {
+                if (!sendMasterToZoneMessage[i]) {
+                    continue;
+                }
+                
+                printOut.print("Send: ");
+                sendMasterToZoneMessage[i] = false;
+                nextMasterToZoneMessage[i].generate(data);
+                nextMasterToZoneMessage[i].print();
+                send = nextMasterToZoneMessage[i].messageLength;
+                break;
+            }
         }
 
         if (send > 0) {
@@ -543,7 +557,7 @@ namespace Actron485 {
         return stateMessage.zoneOn[zindex(zone)];
     }
 
-    void Controller::setZoneSetpointTemperature(uint8_t zone, double temperature, bool adjustMaster) {
+    void Controller::setZoneSetpointTemperatureCustom(uint8_t zone, double temperature, bool adjustMaster) {
         if (zoneControlled[zindex(zone)] == true) {
             // Check if we need to adjust the master first
             if (adjustMaster) {
@@ -569,6 +583,36 @@ namespace Actron485 {
             nextZoneSetpointCustomCommand.adjustMaster = adjustMaster;
             nextZoneSetpointCustomCommand.zone = zone;
             sendZoneSetpointCustomCommand = true;
+        }
+    }
+
+    void Controller::setZoneSetpointTemperature(uint8_t zone, double temperature, bool adjustMaster) {
+        // Check if we need to adjust the master first
+        if (adjustMaster) {
+            double minAllowed = masterToZoneMessage[zindex(zone)].minSetpoint;
+            double maxAllowed = masterToZoneMessage[zindex(zone)].maxSetpoint;
+            double diff = 0;
+            if (temperature<minAllowed) {
+                diff = minAllowed-temperature;
+            } else if (temperature>maxAllowed) {
+                diff = temperature-maxAllowed;
+            }
+            // If the difference is not 0 adjust
+            if (diff != 0) {
+                double newTempeature = getMasterSetpoint() + diff;
+                setMasterSetpoint(newTempeature);
+            }
+        }
+
+        if (zoneControlled[zindex(zone)] == true) {
+            // We are directly controlling this zone
+            zoneSetpoint[zindex(zone)] = temperature;
+        } else {}
+            // Send the custom zone setpoint message, the official 
+            nextMasterToZoneMessage[zindex(zone)] = masterToZoneMessage[zindex(zone)];
+            nextMasterToZoneMessage[zindex(zone)].minSetpoint = temperature;
+            nextMasterToZoneMessage[zindex(zone)].maxSetpoint = temperature;
+            sendMasterToZoneMessage[zindex(zone)] = true;
         }
     }
 
