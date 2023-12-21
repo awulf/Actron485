@@ -572,7 +572,7 @@ namespace Actron485 {
         }
     }
 
-    double Controller::getZoneSetpointTempeature(uint8_t zone) {
+    double Controller::getZoneSetpointTemperature(uint8_t zone) {
         return stateMessage.zoneSetpoint[zindex(zone)];
     }
 

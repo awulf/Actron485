@@ -239,7 +239,7 @@ public:
     /// @brief get zone set point temperature for Ultima systems
     /// @param zone to query
     /// @returns temperature in °C
-    double getZoneSetpointTempeature(uint8_t zone);
+    double getZoneSetpointTemperature(uint8_t zone);
 
     /// @brief set the current temperature for zones controlled by this module
     /// @param zone to adjust

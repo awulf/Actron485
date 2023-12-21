@@ -7,5 +7,6 @@
         "algorithm": "cpp",
         "*.tcc": "cpp",
         "fstream": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

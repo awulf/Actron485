@@ -1,5 +1,4 @@
 #include <Actron485.h>
-#include <../include/Actron485.h>
 #include <Wire.h>                                                       // required by BME280 library
 #include <BME280_t.h>    
 
