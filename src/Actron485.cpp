@@ -186,6 +186,8 @@ namespace Actron485 {
     void Controller::setup() {
         printOutMode = PrintOutMode::ChangedMessages;
 
+        fullDataLastReceivedTime = 99999;
+        
         // Set to ignore
         for (int i=0; i<8; i++) {
             _requestZoneMode[i] = ZoneMode::Ignore;
@@ -414,11 +416,9 @@ namespace Actron485 {
             }
 
             if (popSendQueue) {
-                printOut.println("==========");
-                printOut.println();
                 sendQueuedCommand();
             }
-            
+
             _serialBufferIndex = 0;
         }
 

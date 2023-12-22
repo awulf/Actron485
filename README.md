@@ -27,6 +27,8 @@ This module can be used to control a whole system such as an ACM-1/2 does or as 
 
 When using as an LM-ZC, one can replace the entire unit with a touch screen controller + temperature sensor to allow for better multi purpose control in that room or use a single ESP32 to control the temperatures in every room with distributed wireless temperature sensors. Useful if wanting to retrofit/upgrade to an Ultima system without having to wire up new controllers.
 
+See examples folder for example usage. Header files such `Actron485.h` and `Actron485Models.h` are documented on how to use. Only use `setControlZone()` if the controller is replacing the zone wall controller. If the zone wall controller is still connected there will be clashes on the RS485 bus, causing the air conditioner to error and can also break cheap chinese RS485 transceiver chips.
+
 ### Control and Reading
 * Turn `ON` and `OFF` the system
 * Set the main `SET POINT` temperature of the system
@@ -50,3 +52,5 @@ When using as an LM-ZC, one can replace the entire unit with a touch screen cont
 ## Todo
 * Testing! Code is new and largely untested 
 * Decode more data. Should be able retrieve all statistics that the [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) module can read 
+
+Open issues or merge requests on any bugs found and improvements.

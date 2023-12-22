@@ -13,12 +13,13 @@
 Actron485::Controller actronController = Actron485::Controller(RXD, TXD, WRITE_ENABLE);
 
 unsigned long temperatureReadTime;
+long counter;
 
 void setup() {
   // Logging serial
   Serial.begin(115200);
 
-  actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
+  actronController.printOutMode = Actron485::PrintOutMode::StatusOnly;
 
 }
 
@@ -29,7 +30,11 @@ void loop() {
   unsigned long now = millis();
 
   if (temperatureReadTime == 0 || (now - temperatureReadTime) > 10000) {
-    Serial.println("AC Stats: ");
+    Serial.print("AC Stats: ");
+    Serial.println(counter);
+
+    Serial.print("Receiving Data: ");
+    Serial.println(actronController.receivingData() ? "YES" : "NO");
 
     for (int i=1; i<6; i++) {
       Serial.print("Zone ");
@@ -44,15 +49,11 @@ void loop() {
     }
     Serial.println();
     
-
-    actronController.setZoneSetpointTemperature(3, 24, false);
-    actronController.setZoneOn(3, true);
-
-    // Serial.print(BMESensor.temperature);                                  // display temperature in Celsius
-    // Serial.println("C");
-    // actronController.setZoneCurrentTemperature(3, BMESensor.temperature);
+    // actronController.setZoneSetpointTemperature(1, 22, false);
+    actronController.setZoneOn(1, true);
 
     temperatureReadTime = now;
+    counter++;
   }
 
 }
