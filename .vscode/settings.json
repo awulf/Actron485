@@ -8,5 +8,11 @@
         "*.tcc": "cpp",
         "fstream": "cpp"
     },
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "cSpell.words": [
+        "Actron",
+        "ICAMIB",
+        "MODBUS",
+        "Ultima"
+    ]
 }

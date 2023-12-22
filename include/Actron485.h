@@ -72,7 +72,7 @@ public:
     /// @param writeEnablePin for write enable, set to 0 if not used
     Controller(uint8_t rxPin, uint8_t txPin, uint8_t writeEnablePin);
 
-    /// @brief initialise controller with a custom stream
+    /// @brief initialise controller with a custom stream, e.g. if using single wire
     /// @param writeEnablePin for write enable, set to 0 if not used
     /// @param stream 
     Controller(Stream &stream, uint8_t writeEnablePin);
@@ -94,6 +94,9 @@ public:
 
     /// @brief State of the AC control message
     StateMessage stateMessage;
+
+    /// @brief system millis when full data was last received,,
+    unsigned long fullDataLastReceivedTime;
 
     /// @brief Message type determined by the first byte
     /// @param firstByte to from the message
@@ -151,6 +154,10 @@ public:
     //////////////////////
     /// Convenient functions, that are the typical use for this module
 
+    /// @brief Check if the system is receiving data, within 3seconds is considered valid
+    /// @return true if we are receiving fresh data, false otherwise
+    bool receivingData();
+
     // Setup
 
     /// @brief set the specified zone to be controlled by this module
@@ -168,6 +175,8 @@ public:
     bool getControlZone(uint8_t zone);
 
     // System Control
+    // Generally if receivingData() is returnin false sending commands are dropped as most commands
+    // require up to date information to send the correct data
 
     /// @brief turn the ac system on/off, when turning on, should resture last operating mode
     /// @param on true to turn on, false to turn off

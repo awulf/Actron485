@@ -46,7 +46,7 @@ void loop() {
     
 
     actronController.setZoneSetpointTemperature(3, 24, false);
-    // actronController.setZoneOn(1, true);
+    actronController.setZoneOn(3, true);
 
     // Serial.print(BMESensor.temperature);                                  // display temperature in Celsius
     // Serial.println("C");

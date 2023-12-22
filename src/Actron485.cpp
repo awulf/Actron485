@@ -385,6 +385,8 @@ namespace Actron485 {
                 case MessageType::Stat3:
                     changed = copyBytes(_serialBuffer, stat3Message, stat3MessageLength);
 
+                    fullDataLastReceivedTime = now;
+
                     // Reset board comms1 counter
                     boardComms1Index = 0;
 
@@ -416,7 +418,7 @@ namespace Actron485 {
                 printOut.println();
                 sendQueuedCommand();
             }
-
+            
             _serialBufferIndex = 0;
         }
 
@@ -431,6 +433,10 @@ namespace Actron485 {
      //////////////////////
     /// Convenient functions, that are the typical use for this module
 
+    bool Controller::receivingData() {
+        return (millis() - fullDataLastReceivedTime) < 3000;
+    }
+
     // Setup
 
     void Controller::setControlZone(uint8_t zone, bool control) {
@@ -444,6 +450,10 @@ namespace Actron485 {
     // System Control
 
     void Controller::setSystemOn(bool on) {
+        if (!receivingData()) {
+            return;
+        }
+
         if (stateMessage.operatingMode == OperatingMode::Off && on) {
             // If all off, pressing on turns on fan mode
             nextOperatingModeCommand.mode = OperatingMode::FanOnly;
@@ -462,6 +472,10 @@ namespace Actron485 {
     }
 
     void Controller::setFanSpeed(FanMode fanSpeed) {
+        if (!receivingData()) {
+            return;
+        }
+
         bool continuous = getContinuousFanMode();
         switch (fanSpeed) {
             case FanMode::Low:
@@ -488,6 +502,10 @@ namespace Actron485 {
     }
 
     void Controller::setContinuousFanMode(bool on) {
+        if (!receivingData()) {
+            return;
+        }
+
         FanMode fanSpeed = getFanSpeed();
         switch (fanSpeed) {
             case FanMode::Low:
@@ -514,6 +532,10 @@ namespace Actron485 {
     }
 
     void Controller::setOperatingMode(OperatingMode mode) {
+        if (!receivingData()) {
+            return;
+        }
+
         OperatingMode currentMode = stateMessage.operatingMode;
         if (mode == OperatingMode::Off) {
             setSystemOn(false);
@@ -528,6 +550,10 @@ namespace Actron485 {
     }
 
     void Controller::setMasterSetpoint(double temperature) {
+        if (!receivingData()) {
+            return;
+        }
+
         nextSetpointCommand.temperature = temperature;
         sendSetpointCommand = true;
     }
@@ -547,6 +573,10 @@ namespace Actron485 {
     /// Zone Control
 
     void Controller::setZoneOn(uint8_t zone, bool on) {
+        if (!receivingData()) {
+            return;
+        }
+
         for (int i=0; i<8; i++) {
             nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : stateMessage.zoneOn[i]);
         }
@@ -558,6 +588,10 @@ namespace Actron485 {
     }
 
     void Controller::setZoneSetpointTemperatureCustom(uint8_t zone, double temperature, bool adjustMaster) {
+        if (!receivingData()) {
+            return;
+        }
+
         if (zoneControlled[zindex(zone)] == true) {
             // Check if we need to adjust the master first
             if (adjustMaster) {
@@ -587,6 +621,10 @@ namespace Actron485 {
     }
 
     void Controller::setZoneSetpointTemperature(uint8_t zone, double temperature, bool adjustMaster) {
+        if (!receivingData()) {
+            return;
+        }
+
         // Check if we need to adjust the master first
         if (adjustMaster) {
             double minAllowed = masterToZoneMessage[zindex(zone)].minSetpoint;
@@ -605,9 +643,9 @@ namespace Actron485 {
         }
 
         if (zoneControlled[zindex(zone)] == true) {
-            // We are directly controlling this zone
+            // We are directly controlling this
             zoneSetpoint[zindex(zone)] = temperature;
-        } else {}
+        } else {
             // Send the custom zone setpoint message, the official 
             nextMasterToZoneMessage[zindex(zone)] = masterToZoneMessage[zindex(zone)];
             nextMasterToZoneMessage[zindex(zone)].minSetpoint = temperature;

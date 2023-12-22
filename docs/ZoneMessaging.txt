@@ -128,7 +128,7 @@ Z: C3 31 82 04 85 			1100 0011  0011 0001  1000 0010  0000 0100  1000 0101
 - An Open Zone wont cause compressor/fan to turn, but will keep on if other zones are turned off
 
 
-Baudrate 4800
+Baud rate 4800
 Master will also call C`z` (C3) when looking for a missing controller. A reply will activate it calling 8`z` (83) again.
 Unknown how a wall controller knows which zone it is
 
