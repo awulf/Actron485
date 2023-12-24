@@ -44,6 +44,24 @@ See examples folder for example usage. Header files such `Actron485.h` and `Actr
 * Read individual zone temperatures (Ultima systems only)
 * Read individual zone statistics e.g. damper position, open mode, requesting compressor (Ultima systems only)
 
+### Wiring Up
+
+**WARNING** Turn off the power from the main switch at the outdoor unit before removing covers and touching any wiring as the 240V mains power is exposed. Switching off the power will prevent electrical shock and reduce the risk of damaging your air conditioner.
+
+Wiring up the A/B from the MAX485 TTL UART to the Air conditioner. There wil be multiple places to connect the wires to on the AC side.
+1. Indoor board DATA header e.g. pins 3 (A) 4 (B) shown in the photo
+2. Indoor board to outdoor connection A/B
+3. Outdoor board to indoor Connection A/B
+
+There are ESP32 available with built in RS485 connectivity. Connecting an external MAX485 TTL UART, connect the following:
+* DI to the TX GPIO
+* RO to the RX GPIO
+* DE and !RE together to the Write enable GPIO
+
+If running out of pins on the ESP32, TX and RX can be joined and be configured to run on a single wire serial.
+
+![Example wiring photo](./assets/wiring-example-remote.jpg "Example wiring diagram")
+
 ## Notes
 * One command per cycle can be sent (~1s per cycle). Different commands are stored and sent out one by one at the end of a cycle. E.g. setting 8 zone temperatures, takes 8 seconds to complete.
 * If a command is scheduled to be sent out, but in the mean time another command of the same type is set, the original command will be ignored. E.g. `turn system off` command is scheduled, but before it has time to be sent a `turn system on` command is scheduled, it will replace the off command.

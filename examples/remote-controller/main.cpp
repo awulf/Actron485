@@ -19,7 +19,7 @@ void setup() {
   // Logging serial
   Serial.begin(115200);
 
-  actronController.printOutMode = Actron485::PrintOutMode::StatusOnly;
+  actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
 
 }
 
