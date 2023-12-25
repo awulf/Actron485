@@ -70,5 +70,8 @@ If running out of pins on the ESP32, TX and RX can be joined and be configured t
 ## Todo
 * Testing! Code is new and largely untested 
 * Decode more data. Should be able retrieve all statistics that the [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) module can read 
+* ESPHome Lib
+* Complete Indoor 2 Comms (required for some systems)
+* Read latest data on functions (e.g. return what we sent to improve displaying the current desired state)
 
 Open issues or merge requests on any bugs found and improvements.

@@ -47,7 +47,8 @@ void ZoneToMasterMessage::print() {
 }
 
 void ZoneToMasterMessage::parse(uint8_t data[5]) {
-    
+    initialised = true;
+
     zone = data[0] & 0b00001111;
 
     setpoint = data[1] / 2.0;
@@ -204,6 +205,8 @@ void MasterToZoneMessage::print() {
 }
 
 void MasterToZoneMessage::parse(uint8_t data[7]) {
+    initialised = true;
+
     zone = data[0] & 0b00001111;
 
     // Temperature bits: [23][08 - 15]
@@ -504,8 +507,139 @@ void StateMessage::print() {
 }
 
 void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
+    initialised = true;
+
     for (int i=0; i<8; i++) {
         zoneSetpoint[i] = (double)data[i+3] / 2.0;
+        zoneOn[i] = (data[11] & (1 << i)) >> i;
+    }
+
+    setpoint = (double)data[14] / 2.0;
+
+    temperature = ((double) (((uint16_t)data[16] << 8) | data[17])) / 10.0;
+    
+    uint8_t fanModeRaw = (data[15] & 0b111110) >> 1;
+    switch (fanModeRaw) {
+        case 0b00000:
+            fanMode = FanMode::Off;
+            break;
+        case 0b10000:
+            fanMode = FanMode::Low;
+            break;
+        case 0b01000:
+            fanMode = FanMode::Medium;
+            break;
+        case 0b00100:
+            fanMode = FanMode::High;
+            break;
+        case 0b00101:
+            fanMode = FanMode::Esp;
+            break;
+    }
+
+    continuousFan = (data[15] & 0b10000000) == 0b10000000;
+    fanActive = (data[15] & 0b1) == 0; // 0 == Active, 1 == Idle
+
+    uint8_t operatingModeRaw = (data[13] & 0b00011111);
+    // If the system is off show operating mode as such
+    operatingMode = OperatingMode(((operatingModeRaw & 0b11000) == 0) ? 0 : operatingModeRaw);
+    // And note what it has been in the past
+    lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
+
+    systemActive = data[13] & 0b10000000 == 0b10000000;
+}
+
+///////////////////////////////////
+// Actron485::StateMessage2
+
+void StateMessage2::print() {
+    printOut.print("State 2: ");
+    printOut.print("Operating Mode: ");
+    switch (operatingMode) {
+        case OperatingMode::Off:
+            printOut.print("Off");
+            switch (lastOperatingMode) {
+                case OperatingMode::Auto:
+                    printOut.print("-Auto");
+                    break;
+                case OperatingMode::Cool:
+                    printOut.print("-Cool");
+                    break;
+                case OperatingMode::Heat:
+                    printOut.print("-Heat");
+                    break;
+                default:
+                    printOut.print("-Fan Only");
+                    break;
+            }
+            break;
+        case OperatingMode::FanOnly:
+            printOut.print("Fan Only");
+            break;
+        case OperatingMode::Auto:
+            printOut.print("Auto");
+            break;
+        case OperatingMode::Cool:
+            printOut.print("Cool");
+            break;
+        case OperatingMode::Heat:
+            printOut.print("Heat");
+            break;
+    }
+    printOut.print(" - ");
+    if (systemActive) {
+        printOut.print("Active");
+    } else {
+        printOut.print("Idle");
+    }
+
+    printOut.print(", Fan Mode: ");
+    switch (fanMode) {
+        case FanMode::Off:
+            printOut.print("Off");
+            break;
+        case FanMode::Low:
+            printOut.print("Low");
+            break;
+        case FanMode::Medium:
+            printOut.print("Medium");
+            break;
+        case FanMode::High:
+            printOut.print("High");
+            break;
+        case FanMode::Esp:
+            printOut.print("ESP");
+            break;
+    }
+    if (continuousFan) {
+        printOut.print(" Continuous");
+    } 
+    printOut.print(" - ");
+    if (fanActive) {
+        printOut.print("Active");
+    } else {
+        printOut.print("Idle");
+    }
+
+    printOut.print(", Setpoint: ");
+    printOut.print(setpoint);
+
+    printOut.print(", Temperature: ");
+    printOut.print(temperature);
+
+    printOut.print(", Zones:");
+    for (int i=0; i<8; i++) {
+        printOut.print(" ");
+        printOut.print(i+1);
+        printOut.print(":");
+        printOut.print((zoneOn[i] ? "On" : "Off"));
+    }
+}
+
+void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
+    initialised = true;
+
+    for (int i=0; i<8; i++) {
         zoneOn[i] = (data[11] & (1 << i)) >> i;
     }
 

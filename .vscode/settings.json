@@ -11,8 +11,11 @@
     "cmake.configureOnOpen": false,
     "cSpell.words": [
         "Actron",
+        "GPIO",
         "ICAMIB",
         "MODBUS",
-        "Ultima"
+        "Setpoint",
+        "Ultima",
+        "zindex"
     ]
 }

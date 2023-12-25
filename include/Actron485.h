@@ -32,24 +32,30 @@ class Controller {
     /// @brief Index of current sequence being read
     uint8_t _serialBufferIndex = 0;
 
+    /// @brief system millis when there was a pause in receiving, a time when sending can occur
+    unsigned long _lastQuietPeriodDetectedTime;
+
+    /// @brief system millis when the last command was sent
+    unsigned long _lastCommandSentTime;
+
     /// @brief Bring up/down the serial write enable pin
     /// @param enable 
     void serialWrite(bool enable);
 
-    /// @brief Attemps to send a zone mesage immediatly for the given zone number
+    /// @brief Attemps to send a zone message immediately for the given zone number
     /// @param zone 
     void sendZoneMessage(int zone);
 
-    /// @brief Attempts to send a zone config message immdiatly for the given zone number
+    /// @brief Attempts to send a zone config message immediately for the given zone number
     /// @param zone 
     void sendZoneConfigMessage(int zone);
 
-    /// @brief Attempts to send a zone init message immdiatly for the given zone number, should be sent
+    /// @brief Attempts to send a zone init message immediately for the given zone number, should be sent
     /// straight after the master controller requests the zone
     /// @param zone 
     void sendZoneInitMessage(int zone);
 
-    /// @brief Process the master to zone message received, adjusts stored zone paramters accordingly
+    /// @brief Process the master to zone message received, adjusts stored zone parameters accordingly
     /// @param masterMessage to process
     void processMasterMessage(MasterToZoneMessage masterMessage);
 
@@ -92,11 +98,14 @@ public:
     /// @brief Zone 1 - 8 (indexed 0-7), last master to zone message
     MasterToZoneMessage masterToZoneMessage[8];
 
-    /// @brief State of the AC control message
+    /// @brief State of the AC control message (may not be available to all systems)
     StateMessage stateMessage;
 
-    /// @brief system millis when full data was last received,,
-    unsigned long fullDataLastReceivedTime;
+    /// @brief State of the AC control message (more commonly available in systems, but updates less frequent)
+    StateMessage2 stateMessage2;
+
+    /// @brief system millis when data was last received
+    unsigned long dataLastReceivedTime;
 
     /// @brief Message type determined by the first byte
     /// @param firstByte to from the message
@@ -143,8 +152,7 @@ public:
     uint8_t boardComms1MessageLength[2];
     uint8_t boardComms1Message[2][50];
 
-    const static uint8_t boardComms2MessageLength = 18;
-    uint8_t boardComms2Message[boardComms2MessageLength];
+    uint8_t stateMessage2Raw[StateMessage2::stateMessageLength];
     uint8_t stateMessageRaw[StateMessage::stateMessageLength];
     const static uint8_t stat2MessageLength = 19;
     uint8_t stat2Message[19];
@@ -161,10 +169,10 @@ public:
     // Setup
 
     /// @brief set the specified zone to be controlled by this module
-    /// turning a zone on to be controlled will configure this module to report tempeature reading and
+    /// turning a zone on to be controlled will configure this module to report temperature reading and
     /// control the setpoint temperature.
     /// *** Only one zone controller can be active for a given zone ***
-    /// This module can control mutliple zones at once
+    /// This module can control multiple zones at once
     /// @param zone to set
     /// @param control true to enable, false otherwise
     void setControlZone(uint8_t zone, bool control);
@@ -175,10 +183,10 @@ public:
     bool getControlZone(uint8_t zone);
 
     // System Control
-    // Generally if receivingData() is returnin false sending commands are dropped as most commands
+    // Generally if receivingData() is returning false sending commands are dropped as most commands
     // require up to date information to send the correct data
 
-    /// @brief turn the ac system on/off, when turning on, should resture last operating mode
+    /// @brief turn the ac system on/off, when turning on, should restore last operating mode
     /// @param on true to turn on, false to turn off
     void setSystemOn(bool on);
 
@@ -190,6 +198,10 @@ public:
     /// @param speed to set from Low, Medium, High, ESP (Auto), other options are ignored
     void setFanSpeed(FanMode fanSpeed);
 
+    /// @brief set the system fan speed, adjusting continuous mode
+    /// @param speed to set from Low, Medium, High, ESP (Auto), Low Cont., Medium Cont., High Cont., ESP (Auto) Cont., 
+    void setFanSpeedAbsolute(FanMode fanSpeed);
+
     /// @brief get the system fan speed
     /// @returns returns Off, Low, Medium, High, ESP (Auto)
     FanMode getFanSpeed();
@@ -198,7 +210,7 @@ public:
     /// @param on sets it to on, false to normal mode
     void setContinuousFanMode(bool on);
 
-    /// @brief get if continouis fan mode is on or off
+    /// @brief get if continuous fan mode is on or off
     /// @returns true if on, false otherwise
     bool getContinuousFanMode();
 
@@ -211,11 +223,11 @@ public:
     /// @return the operating mode: Fan Only, Auto, Cool, Heat
     OperatingMode getOperatingMode();
 
-    /// @brief set the master setpoint tempeature
+    /// @brief set the master setpoint temperature
     /// @param temperature to set in °C, in 0.5° increments
     void setMasterSetpoint(double temperature);
 
-    /// @brief get the master setpoint tempeature
+    /// @brief get the master setpoint temperature
     /// @returns temperature in °C
     double getMasterSetpoint();
 

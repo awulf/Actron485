@@ -45,7 +45,7 @@ namespace Actron485 {
         zoneMessage[zindex(zone)].type = ZoneMessageType::Normal;
         zoneMessage[zindex(zone)].temperature = zoneTemperature[zindex(zone)];
 
-        // Enforce, and set based on setpoint range limit, if we aren't currently adjusting the master setpoint
+        // Enforce, and set based on set point range limit, if we aren't currently adjusting the master set point
         if (!sendSetpointCommand) {
             zoneSetpoint[zindex(zone)] = max(min(zoneSetpoint[zindex(zone)], masterToZoneMessage[zindex(zone)].maxSetpoint), masterToZoneMessage[zindex(zone)].minSetpoint);
         }
@@ -159,7 +159,7 @@ namespace Actron485 {
             return;
         }
 
-        // If we got a zone message from not us, its probably the master contoller
+        // If we got a zone message from not us, its probably the master controller
         // asking us to respond
         if (zoneMessage.type == ZoneMessageType::InitZone) {
             sendZoneInitMessage(zoneMessage.zone);
@@ -186,8 +186,8 @@ namespace Actron485 {
     void Controller::setup() {
         printOutMode = PrintOutMode::ChangedMessages;
 
-        fullDataLastReceivedTime = 99999;
-        
+        dataLastReceivedTime = 99999;
+
         // Set to ignore
         for (int i=0; i<8; i++) {
             _requestZoneMode[i] = ZoneMode::Ignore;
@@ -251,6 +251,7 @@ namespace Actron485 {
         }
 
         if (send > 0) {
+            _lastCommandSentTime = millis();
             serialWrite(true); 
             
             for (int i=0; i<send; i++) {
@@ -281,10 +282,10 @@ namespace Actron485 {
             return MessageType::CommandOperatingMode;
         } else if (firstByte == (uint8_t) MessageType::CommandZoneState) {
             return MessageType::CommandZoneState;
-        } else if (firstByte == (uint8_t) MessageType::BoardComms1) {
-            return MessageType::BoardComms1;
-        } else if (firstByte == (uint8_t) MessageType::BoardComms2) {
-            return MessageType::BoardComms2;
+        } else if (firstByte == (uint8_t) MessageType::IndoorBoard1) {
+            return MessageType::IndoorBoard1;
+        } else if (firstByte == (uint8_t) MessageType::IndoorBoard2) {
+            return MessageType::IndoorBoard2;
         } else if (firstByte == (uint8_t) MessageType::Stat1) {
             return MessageType::Stat1;
         } else if (firstByte == (uint8_t) MessageType::Stat2) {
@@ -305,96 +306,100 @@ namespace Actron485 {
         long serialLastReceivedTime = now-_serialBufferReceivedTime;
 
         if (_serialBufferIndex > 0 && serialLastReceivedTime > _serialBufferBreak) {
-            MessageType messageType = detectActronMessageType(_serialBuffer[0]);
-
             bool printChangesOnly = printOutMode == PrintOutMode::ChangedMessages;
             bool printAll = (printOutMode == PrintOutMode::AllMessages);
             bool changed = false;
 
-            bool popSendQueue = false;
-
             uint8_t zone = 0;
 
-            switch (messageType) {
-                case MessageType::Unknown:
-                    printOut.println("Unknown Message received");
-                    changed = true;
-                    break;
-                case MessageType::CommandMasterSetpoint:
-                    // We don't care about this command
-                    break;
-                case MessageType::CommandFanMode:
-                    // We don't care about this command
-                    break;
-                case MessageType::CommandOperatingMode:
-                    // We don't care about this command
-                    break;
-                case MessageType::CommandZoneState:
-                    // We don't care about this command
-                    break;
-                case MessageType::CustomCommandChangeZoneSetpoint:
-                    {
-                        ZoneSetpointCustomCommand command;
-                        command.parse(_serialBuffer);
-                        if (zoneControlled[zindex(command.zone)]) {
-                            setZoneSetpointTemperature(command.zone, command.temperature, command.adjustMaster);
+            MessageType messageType = MessageType::Unknown;
+            
+            if ((now - _lastCommandSentTime) < 50) {
+                // This will be a response to our command
+                printOut.println("Response Message Received");
+
+            } else {
+                messageType = detectActronMessageType(_serialBuffer[0]);
+                
+                switch (messageType) {
+                    case MessageType::Unknown:
+                        printOut.println("Unknown Message received");
+                        changed = true;
+                        break;
+                    case MessageType::CommandMasterSetpoint:
+                        // We don't care about this command
+                        break;
+                    case MessageType::CommandFanMode:
+                        // We don't care about this command
+                        break;
+                    case MessageType::CommandOperatingMode:
+                        // We don't care about this command
+                        break;
+                    case MessageType::CommandZoneState:
+                        // We don't care about this command
+                        break;
+                    case MessageType::CustomCommandChangeZoneSetpoint:
+                        {
+                            ZoneSetpointCustomCommand command;
+                            command.parse(_serialBuffer);
+                            if (zoneControlled[zindex(command.zone)]) {
+                                setZoneSetpointTemperature(command.zone, command.temperature, command.adjustMaster);
+                            }
                         }
-                    }
-                    break;
-                case MessageType::ZoneWallController:
-                    zone = _serialBuffer[0] & 0x0F;
-                    if (0 < zone && zone <= 8) {
-                        zoneMessage[zindex(zone)].parse(_serialBuffer);
-                        changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], zoneMessage[zindex(zone)].messageLength);
+                        break;
+                    case MessageType::ZoneWallController:
+                        zone = _serialBuffer[0] & 0x0F;
+                        if (0 < zone && zone <= 8) {
+                            zoneMessage[zindex(zone)].parse(_serialBuffer);
+                            changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], zoneMessage[zindex(zone)].messageLength);
+                            if (printAll || printChangesOnly && changed) {
+                                zoneMessage[zindex(zone)].print();
+                                printOut.println();
+                            }
+                        }
+                        break;
+                    case MessageType::ZoneMasterController:
+                        zone = _serialBuffer[0] & 0x0F;
+                        if (0 < zone && zone <= 8) {
+                            masterToZoneMessage[zindex(zone)].parse(_serialBuffer);
+                            changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], masterToZoneMessage[zindex(zone)].messageLength);
+
+                            if (printAll || printChangesOnly && changed) {
+                                masterToZoneMessage[zindex(zone)].print();
+                                printOut.println();
+                            }
+                        }
+                        break;
+                    case MessageType::IndoorBoard1:
+                        changed = copyBytes(_serialBuffer, boardComms1Message[boardComms1Index], _serialBufferIndex);
+                        boardComms1MessageLength[boardComms1Index] = _serialBufferIndex;
+                        boardComms1Index = (boardComms1Index + 1)%2;
+                        break;
+                    case MessageType::IndoorBoard2:
+                        changed = copyBytes(_serialBuffer, stateMessage2Raw, stateMessage2.stateMessageLength);
+                        stateMessage2.parse(_serialBuffer);
+
                         if (printAll || printChangesOnly && changed) {
-                            zoneMessage[zindex(zone)].print();
+                            stateMessage2.print();
                             printOut.println();
                         }
-                    }
-                    break;
-                case MessageType::ZoneMasterController:
-                    zone = _serialBuffer[0] & 0x0F;
-                    if (0 < zone && zone <= 8) {
-                        masterToZoneMessage[zindex(zone)].parse(_serialBuffer);
-                        changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], masterToZoneMessage[zindex(zone)].messageLength);
+                        break;
+                    case MessageType::Stat1:
+                        changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
+                        stateMessage.parse(_serialBuffer);
 
                         if (printAll || printChangesOnly && changed) {
-                            masterToZoneMessage[zindex(zone)].print();
+                            stateMessage.print();
                             printOut.println();
                         }
-                    }
-                    break;
-                case MessageType::BoardComms1:
-                    changed = copyBytes(_serialBuffer, boardComms1Message[boardComms1Index], _serialBufferIndex);
-                    boardComms1MessageLength[boardComms1Index] = _serialBufferIndex;
-                    boardComms1Index = (boardComms1Index + 1)%2;
-                    break;
-                case MessageType::BoardComms2:
-                    changed = copyBytes(_serialBuffer, boardComms2Message, boardComms2MessageLength);
-                    break;
-                case MessageType::Stat1:
-                    changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
-                    stateMessage.parse(_serialBuffer);
-
-                    if (printAll || printChangesOnly && changed) {
-                        stateMessage.print();
-                        printOut.println();
-                    }
-                    break;
-                case MessageType::Stat2:
-                    changed = copyBytes(_serialBuffer, stat2Message, stat2MessageLength);
-                    break;
-                case MessageType::Stat3:
-                    changed = copyBytes(_serialBuffer, stat3Message, stat3MessageLength);
-
-                    fullDataLastReceivedTime = now;
-
-                    // Reset board comms1 counter
-                    boardComms1Index = 0;
-
-                    // Last message in the sequence, our chance to send a message        
-                    popSendQueue = true;
-                    break;
+                        break;
+                    case MessageType::Stat2:
+                        changed = copyBytes(_serialBuffer, stat2Message, stat2MessageLength);
+                        break;
+                    case MessageType::Stat3:
+                        changed = copyBytes(_serialBuffer, stat3Message, stat3MessageLength);
+                        break;
+                }
             }
 
             if (printAll || printChangesOnly && changed) {
@@ -415,11 +420,18 @@ namespace Actron485 {
                 }
             }
 
-            if (popSendQueue) {
-                sendQueuedCommand();
-            }
+            dataLastReceivedTime = now;
 
             _serialBufferIndex = 0;
+        }
+
+        // A gap send our message
+        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900) {
+            _lastQuietPeriodDetectedTime = now;
+            // Reset board comms1 counter
+            boardComms1Index = 0;
+            printOut.println("Time to Send");
+            sendQueuedCommand();
         }
 
         while(_serial->available() > 0 && _serialBufferIndex < _serialBufferSize) {
@@ -434,7 +446,7 @@ namespace Actron485 {
     /// Convenient functions, that are the typical use for this module
 
     bool Controller::receivingData() {
-        return (millis() - fullDataLastReceivedTime) < 3000;
+        return (millis() - dataLastReceivedTime) < 3000;
     }
 
     // Setup
@@ -499,6 +511,15 @@ namespace Actron485 {
 
     FanMode Controller::getFanSpeed() {
         return stateMessage.fanMode;
+    }
+
+    void Controller::setFanSpeedAbsolute(FanMode fanSpeed) {
+        if (!receivingData()) {
+            return;
+        }
+
+        nextFanModeCommand.fanMode = fanSpeed;
+        sendFanModeCommand = true;
     }
 
     void Controller::setContinuousFanMode(bool on) {
@@ -605,8 +626,8 @@ namespace Actron485 {
                 }
                 // If the difference is not 0 adjust
                 if (diff != 0) {
-                    double newTempeature = getMasterSetpoint() + diff;
-                    setMasterSetpoint(newTempeature);
+                    double newTemperature = getMasterSetpoint() + diff;
+                    setMasterSetpoint(newTemperature);
                 }
             }
             zoneSetpoint[zindex(zone)] = temperature;
@@ -637,8 +658,8 @@ namespace Actron485 {
             }
             // If the difference is not 0 adjust
             if (diff != 0) {
-                double newTempeature = getMasterSetpoint() + diff;
-                setMasterSetpoint(newTempeature);
+                double newTemperature = getMasterSetpoint() + diff;
+                setMasterSetpoint(newTemperature);
             }
         }
 

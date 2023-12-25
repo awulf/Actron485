@@ -24,8 +24,8 @@ enum class MessageType: uint8_t {
     CustomCommandChangeZoneSetpoint = 0x3F,
     ZoneWallController = 0xC0, // 0xC{zone}
     ZoneMasterController = 0x80, // 0x8{zone}
-    BoardComms1 = 0x01, // Unknown
-    BoardComms2 = 0x02, // Unknown
+    IndoorBoard1 = 0x01, // Unknown
+    IndoorBoard2 = 0x02, // Infrequently updated indoor board status
     Stat1 = 0xA0, // Unknown
     Stat2 = 0xFE, // Unknown
     Stat3 = 0xE0 // Unknown
@@ -37,7 +37,7 @@ enum class ZoneMode {
     Off,
     On,
     Open,
-    Ignore = -1 // Not part of the spec, used in this code wheather to update
+    Ignore = -1 // Not part of the spec, used in this code whether to update
 };
 
 enum class ZoneMessageType {
@@ -47,6 +47,9 @@ enum class ZoneMessageType {
 };
 
 struct ZoneToMasterMessage {
+    /// @brief struct has initialised data
+    bool initialised;
+
     static const uint8_t messageLength = 5;
 
     // Zone number. 0 -> 8
@@ -96,6 +99,9 @@ enum class ZoneOperationMode {
 };
 
 struct MasterToZoneMessage {
+    /// @brief struct has initialised data
+    bool initialised;
+
     static const uint8_t messageLength = 7;
 
     // Zone number. 0 -> 8
@@ -270,6 +276,9 @@ struct ZoneSetpointCustomCommand {
 };
 
 struct StateMessage {
+    /// @brief struct has initialised data
+    bool initialised;
+
     const static uint8_t stateMessageLength = 23;
 
     /// @brief setpoint temperature of all zones 1-8 indexed 0-7
@@ -277,10 +286,10 @@ struct StateMessage {
     /// @brief false if off, true if on, zones 1-8 indexed 0-7
     bool zoneOn[8];
 
-    /// @brief Average tempeature of all active zones, where ever temperature sensors are
+    /// @brief Average temperature of all active zones, where ever temperature sensors are
     double temperature;
 
-    /// @brief System setpoint temperature, which also limits individual zone temperature setpoints
+    /// @brief System setpoint temperature, which also limits individual zone temperature set points
     double setpoint;
 
     /// @brief Mode the system is operating in
@@ -301,8 +310,48 @@ struct StateMessage {
     void print();
 
     /// @brief parse data provided
-    /// @param data to read of 2 bytes
-    void parse(uint8_t data[2]);
+    /// @param data to read of 23 bytes
+    void parse(uint8_t data[23]);
+};
+
+/// @brief Less Frequent State Message that should be sent by most Indoor Boards
+struct StateMessage2 {
+    /// @brief struct has initialised data
+    bool initialised;
+
+    const static uint8_t stateMessageLength = 18;
+
+    /// @brief setpoint temperature of all zones 1-8 indexed 0-7
+    double zoneSetpoint[8];
+    /// @brief false if off, true if on, zones 1-8 indexed 0-7
+    bool zoneOn[8];
+
+    /// @brief Average temperature of all active zones, where ever temperature sensors are
+    double temperature;
+
+    /// @brief System setpoint temperature, which also limits individual zone temperature set points
+    double setpoint;
+
+    /// @brief Mode the system is operating in
+    OperatingMode operatingMode;
+    /// @brief If system is off this is the last mode it operated in, thus can be used to turn the system back on to last used state
+    OperatingMode lastOperatingMode;
+    /// @brief True if system is actively cooling/heating, false if idle
+    bool systemActive;
+
+    /// @brief System fan mode (not including continuous mode)
+    FanMode fanMode;
+    /// @brief True if system is in continuous mode
+    bool continuousFan;
+    /// @brief True if system fan is running, false if off
+    bool fanActive;
+
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 18 bytes
+    void parse(uint8_t data[18]);
 };
 
 }
