@@ -320,9 +320,7 @@ struct StateMessage2 {
     bool initialised;
 
     const static uint8_t stateMessageLength = 18;
-
-    /// @brief setpoint temperature of all zones 1-8 indexed 0-7
-    double zoneSetpoint[8];
+    
     /// @brief false if off, true if on, zones 1-8 indexed 0-7
     bool zoneOn[8];
 

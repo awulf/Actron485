@@ -640,14 +640,14 @@ void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
     initialised = true;
 
     for (int i=0; i<8; i++) {
-        zoneOn[i] = (data[11] & (1 << i)) >> i;
+        zoneOn[i] = (data[6] & (1 << i)) >> i;
     }
 
-    setpoint = (double)data[14] / 2.0;
+    setpoint = (double)data[4] / 2.0;
 
-    temperature = ((double) (((uint16_t)data[16] << 8) | data[17])) / 10.0;
+    temperature = ((double) (((uint16_t)data[9] << 8) | data[10])) / 10.0;
     
-    uint8_t fanModeRaw = (data[15] & 0b111110) >> 1;
+    uint8_t fanModeRaw = (data[05] & 0b111110) >> 1;
     switch (fanModeRaw) {
         case 0b00000:
             fanMode = FanMode::Off;
@@ -661,21 +661,21 @@ void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
         case 0b00100:
             fanMode = FanMode::High;
             break;
-        case 0b00101:
+        case 0b00001:
             fanMode = FanMode::Esp;
             break;
     }
 
-    continuousFan = (data[15] & 0b10000000) == 0b10000000;
-    fanActive = (data[15] & 0b1) == 0; // 0 == Active, 1 == Idle
+    continuousFan = (data[5] & 0b10000000) == 0b10000000;
+    fanActive = (data[5] & 0b1) == 0; // 0 == Active, 1 == Idle
 
-    uint8_t operatingModeRaw = (data[13] & 0b00011111);
+    uint8_t operatingModeRaw = (data[3] & 0b00011111);
     // If the system is off show operating mode as such
     operatingMode = OperatingMode(((operatingModeRaw & 0b11000) == 0) ? 0 : operatingModeRaw);
     // And note what it has been in the past
     lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
 
-    systemActive = data[13] & 0b10000000 == 0b10000000;
+    systemActive = data[3] & 0b10000000 == 0b10000000;
 }
 
 }

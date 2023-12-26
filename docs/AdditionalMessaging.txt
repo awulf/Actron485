@@ -15,10 +15,14 @@
             ESP Cont 	= 0x83 = 0b10000011
 3C XX = AC Mode
 		00 (0000 0000) -> OFF
+        04 (0000 0100) -> OFF Auto
+		02 (0000 0010) -> OFF Cool
+		01 (0000 0001) -> OFF Heat
 		10 (0001 0000) -> Fan Only
 		0C (0000 1100) -> Auto
 		0A (0000 1010) -> Cool
 		09 (0000 1001) -> Heat
+        Response: Repeats what's sent
 3D XX = Zone On/Off State in 8 bits for 8 zones: Zone 8-1, Setting 0 turns off all zones
 
 ==============
@@ -43,22 +47,30 @@ eg:
 00: 02
 01:
 02:
-03:
-04:
-05: Fan Speed
-    Low 		= 0x21 = 0b00100001
-    Medium 		= 0x11 = 0b00010001
-    High 		= 0x09 = 0b00001001
-    ESP 		= 0x03 = 0b00000011
-    Low Cont 	= 0xA1 = 0b10100001
-    Medium Cont = 0x91 = 0b10010001
-    High Cont 	= 0x89 = 0b10001001
-    ESP Cont 	= 0x83 = 0b10000011
+03: AC Mode
+    0 - 
+    1 - 
+    2 - 0 Idle, 1 Active   
+    3 - Mode: 00xxx = Off - Off can store it's last used compressor operating mode, e.g. 00010 for off-cool
+    4       " 10000 = Fan Only
+    5       " 0x100 = Auto
+    6       " 0x010 = Cool
+    7       " 0x001 = Heat
+04: Setpoint Temp. -> Value/2.0°C
+05: Fan Setting
+    0 - 1 Continuous, 0 Normal
+    1 -  
+    2 - Fan Mode: 10000 = Low
+    3           " 01000 = Medium
+    4           " 00100 = High
+    5           " 00001 = ESP
+    6           "     
+    7 - 1 Idle, 0 Active
 06: Zone On/Off State -> Zone 8-1 in 8 bits
 07:
 08:
-09:
-10:
+09: Master Temperature (either single wall controller, or average of turned on zones) 
+10: " -> 16bit Value/10.0°C
 11:
 12:
 13:

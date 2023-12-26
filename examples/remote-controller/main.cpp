@@ -46,29 +46,32 @@ void loop() {
 
   Serial.println("==");
     if (counter == 1) {
-      Serial.println("Send Low: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::Low);  
-    } else if (counter == 1) {
-      Serial.println("Send Medium: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::Medium);  
+      Serial.println("Off: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::Off);
     } else if (counter == 2) {
-      Serial.println("Send High: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::High);  
+      Serial.println("Off Auto: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::OffAuto);
     } else if (counter == 3) {
-      Serial.println("Send ESP: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::Esp);  
+      Serial.println("Off Cool: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::OffCool);
     } else if (counter == 4) {
-      Serial.println("Send Low Cont: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::LowContinuous);  
+      Serial.println("Off Heat: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::OffHeat);
     } else if (counter == 5) {
-      Serial.println("Send Medium Cont: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::MediumContinuous);  
-     } else if (counter == 6) {
-      Serial.println("Send High Cont: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::HighContinuous);  
-    } else if (counter == 7) {
-      Serial.println("Send ESP Cont: ");
-      actronController.setFanSpeedAbsolute(Actron485::FanMode::EspContinuous);  
+      Serial.println("Fan Only: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::FanOnly);
+    } else if (counter == 6) {
+      Serial.println("Off: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::Off);
+     } else if (counter == 7) {
+      Serial.println("Auto: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::Auto);
+    } else if (counter == 8) {
+      Serial.println("Cool: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::Cool);  
+    } else if (counter == 9) {
+      Serial.println("Heat: ");
+      actronController.setOperatingMode(Actron485::OperatingMode::Heat);  
     }
 
     temperatureReadTime = now;
