@@ -291,6 +291,36 @@ void MasterSetpointCommand::generate(uint8_t data[2]) {
 ///////////////////////////////////
 // Actron485::FanModeCommand
 
+FanMode FanModeCommand::getFanSpeed() {
+    switch (fanMode) {
+        case FanMode::LowContinuous:
+            return FanMode::Low;
+        case FanMode::MediumContinuous:
+            return FanMode::Medium;
+        case FanMode::HighContinuous:
+            return FanMode::High;
+        case FanMode::EspContinuous:
+            return FanMode::Esp;
+        default:
+            return fanMode;
+    }
+}
+
+bool FanModeCommand::isContinuous() {
+    switch (fanMode) {
+        case FanMode::LowContinuous:
+            return true;
+        case FanMode::MediumContinuous:
+            return true;
+        case FanMode::HighContinuous:
+            return true;
+        case FanMode::EspContinuous:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void FanModeCommand::print() {
     printOut.print("Command: Fan Mode: ");
     switch (fanMode) {
@@ -361,6 +391,20 @@ void ZoneStateCommand::generate(uint8_t data[2]) {
 
 ///////////////////////////////////
 // Actron485::OperatingModeCommand
+
+bool OperatingModeCommand::onCommand() {
+    switch (mode) {
+        case OperatingMode::FanOnly:
+            return true;
+        case OperatingMode::Auto:
+            return true;
+        case OperatingMode::Cool:
+            return true;
+        case OperatingMode::Heat:
+            return true;
+    }
+    return false;
+}
 
 void OperatingModeCommand::print() {
     printOut.print("Command: Operating Mode: ");

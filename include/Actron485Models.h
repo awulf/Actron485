@@ -192,6 +192,14 @@ struct FanModeCommand {
 
     FanMode fanMode;
 
+    /// @brief Get the fan speed portion of the command
+    /// @return Low, Medium, High, ESP (Auto)
+    FanMode getFanSpeed();
+
+    /// @brief Get the continuous portion of the command
+    /// @return true if continuous, false otherwise
+    bool isContinuous();
+
     /// @brief print state to printOut
     void print();
 
@@ -236,6 +244,10 @@ struct OperatingModeCommand {
     static const uint8_t messageLength = 2;
 
     OperatingMode mode;
+
+    /// @brief checks if the command is an on command
+    /// @return true if on false if off
+    bool onCommand();
 
     /// @brief print state to printOut
     void print();
@@ -320,7 +332,7 @@ struct StateMessage2 {
     bool initialised;
 
     const static uint8_t stateMessageLength = 18;
-    
+
     /// @brief false if off, true if on, zones 1-8 indexed 0-7
     bool zoneOn[8];
 

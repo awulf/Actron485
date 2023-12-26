@@ -480,7 +480,18 @@ namespace Actron485 {
     }
 
     bool Controller::getSystemOn() {
-        return stateMessage.operatingMode != OperatingMode::Off;
+        if (sendOperatingModeCommand == true) {
+            // Read from command sent, for instant feedback
+            return nextOperatingModeCommand.onCommand(); 
+        } else if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.operatingMode != OperatingMode::Off;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.operatingMode != OperatingMode::Off;
+        }
+
+        return false;
     }
 
     void Controller::setFanSpeed(FanMode fanSpeed) {
@@ -510,7 +521,17 @@ namespace Actron485 {
     }
 
     FanMode Controller::getFanSpeed() {
-        return stateMessage.fanMode;
+        if (sendFanModeCommand == true) {
+            // Read from command sent, for instant feedback
+            return nextFanModeCommand.getFanSpeed(); 
+        } else if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.fanMode;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.fanMode;
+        }
+        return FanMode::Off;
     }
 
     void Controller::setFanSpeedAbsolute(FanMode fanSpeed) {
@@ -549,7 +570,17 @@ namespace Actron485 {
     }
 
     bool Controller::getContinuousFanMode() {
-        return stateMessage.continuousFan;
+        if (sendFanModeCommand == true) {
+            // Read from command sent, for instant feedback
+            return nextFanModeCommand.isContinuous();
+        } else if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.continuousFan;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.continuousFan;
+        }
+        return false;
     }
 
     void Controller::setOperatingMode(OperatingMode mode) {
@@ -557,7 +588,6 @@ namespace Actron485 {
             return;
         }
 
-        OperatingMode currentMode = stateMessage.operatingMode;
         if (mode == OperatingMode::Off) {
             setSystemOn(false);
         } else {
@@ -567,7 +597,14 @@ namespace Actron485 {
     }
 
     OperatingMode Controller::getOperatingMode() {
-        return stateMessage.lastOperatingMode;
+        if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.lastOperatingMode;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.lastOperatingMode;
+        }
+        return OperatingMode::Auto;
     }
 
     void Controller::setMasterSetpoint(double temperature) {
@@ -580,15 +617,39 @@ namespace Actron485 {
     }
     
     double Controller::getMasterSetpoint() {
-        return stateMessage.setpoint;
+        if (sendSetpointCommand == true) {
+            // Read from command sent, for instant feedback
+            return nextSetpointCommand.temperature;
+        } else if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.setpoint;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.setpoint;
+        }
+        return 0;
     }
 
     bool Controller::isSystemIdle() {
-        return stateMessage.systemActive == false;
+        if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.systemActive == false;;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.systemActive == false;;
+        }
+        return true;
     }
 
     bool Controller::isFanIdle() {
-        return stateMessage.fanActive == false;
+        if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.fanActive == false;;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.fanActive == false;;
+        }
+        return true;
     }
 
     /// Zone Control
@@ -599,13 +660,23 @@ namespace Actron485 {
         }
 
         for (int i=0; i<8; i++) {
-            nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : stateMessage.zoneOn[i]);
+            nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : getZoneOnState(i+1));
         }
         sendZoneStateCommand = true;
     }
 
     bool Controller::getZoneOnState(uint8_t zone) {
-        return stateMessage.zoneOn[zindex(zone)];
+        if (sendZoneStateCommand == true) {
+            // Read from command sent, for instant feedback
+            return nextZoneStateCommand.zoneOn[zindex(zone)];
+        } else if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.zoneOn[zindex(zone)];
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.zoneOn[zindex(zone)];
+        }
+        return false;
     }
 
     void Controller::setZoneSetpointTemperatureCustom(uint8_t zone, double temperature, bool adjustMaster) {
