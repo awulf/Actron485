@@ -44,35 +44,37 @@ void loop() {
     // }
     Serial.println();
 
-  Serial.println("==");
-    if (counter == 1) {
-      Serial.println("Off: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::Off);
-    } else if (counter == 2) {
-      Serial.println("Off Auto: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::OffAuto);
-    } else if (counter == 3) {
-      Serial.println("Off Cool: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::OffCool);
-    } else if (counter == 4) {
-      Serial.println("Off Heat: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::OffHeat);
-    } else if (counter == 5) {
-      Serial.println("Fan Only: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::FanOnly);
-    } else if (counter == 6) {
-      Serial.println("Off: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::Off);
-     } else if (counter == 7) {
-      Serial.println("Auto: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::Auto);
-    } else if (counter == 8) {
-      Serial.println("Cool: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::Cool);  
-    } else if (counter == 9) {
-      Serial.println("Heat: ");
-      actronController.setOperatingMode(Actron485::OperatingMode::Heat);  
-    }
+  // Serial.println("==");
+  //   if (counter == 1) {
+  //     Serial.println("Off: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::Off);
+  //   } else if (counter == 2) {
+  //     Serial.println("Off Auto: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::OffAuto);
+  //   } else if (counter == 3) {
+  //     Serial.println("Off Cool: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::OffCool);
+  //   } else if (counter == 4) {
+  //     Serial.println("Off Heat: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::OffHeat);
+  //   } else if (counter == 5) {
+  //     Serial.println("Fan Only: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::FanOnly);
+  //   } else if (counter == 6) {
+  //     Serial.println("Off: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::Off);
+  //    } else if (counter == 7) {
+  //     Serial.println("Auto: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::Auto);
+  //   } else if (counter == 8) {
+  //     Serial.println("Cool: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::Cool);  
+  //   } else if (counter == 9) {
+  //     Serial.println("Heat: ");
+  //     actronController.setOperatingMode(Actron485::OperatingMode::Heat);  
+  //   }
+
+    actronController.setZoneSetpointTemperature(3, 20, false);
 
     temperatureReadTime = now;
     counter++;

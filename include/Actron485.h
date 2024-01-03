@@ -79,9 +79,17 @@ public:
     Controller(uint8_t rxPin, uint8_t txPin, uint8_t writeEnablePin);
 
     /// @brief initialise controller with a custom stream, e.g. if using single wire
-    /// @param writeEnablePin for write enable, set to 0 if not used
     /// @param stream 
+    /// @param writeEnablePin for write enable, set to 0 if not used
     Controller(Stream &stream, uint8_t writeEnablePin);
+
+    /// @brief initialise unconfigured controller
+    Controller();
+
+    /// @brief configure after initialisation
+    /// @param stream 
+    /// @param writeEnablePin for write enable, set to 0 if not used
+    void configure(Stream &stream, uint8_t writeEnablePin);
 
     /// @brief Zone 1 - 8 (indexed 0-7), set bool to corresponding number to make the zone controlled by this controller
     bool zoneControlled[8];

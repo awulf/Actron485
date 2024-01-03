@@ -183,6 +183,21 @@ namespace Actron485 {
         setup();
     }
 
+    Controller::Controller(Stream &stream, uint8_t writeEnablePin) {
+        _serial = &stream;
+        _writeEnablePin = writeEnablePin;
+        setup();
+    }
+
+    Controller::Controller() {
+        setup();
+    }
+
+    void Controller::configure(Stream &stream, uint8_t writeEnablePin) {
+        _serial = &stream;
+        _writeEnablePin = writeEnablePin;
+    }
+
     void Controller::setup() {
         printOutMode = PrintOutMode::ChangedMessages;
 
@@ -262,12 +277,6 @@ namespace Actron485 {
         }
         
         return send > 0;
-    }
-
-    Controller::Controller(Stream &stream, uint8_t writeEnablePin) {
-        _serial = &stream;
-        _writeEnablePin = writeEnablePin;
-        setup();
     }
 
     ///////////////////////////////////
@@ -430,7 +439,9 @@ namespace Actron485 {
             _lastQuietPeriodDetectedTime = now;
             // Reset board comms1 counter
             boardComms1Index = 0;
-            printOut.println("Time to Send");
+            if (printOutMode == PrintOutMode::AllMessages) {
+                printOut.println("Time to Send");
+            }
             sendQueuedCommand();
         }
 

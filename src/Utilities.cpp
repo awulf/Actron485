@@ -12,11 +12,11 @@ void printByte(uint8_t byte) {
 
 void printBinaryByte(uint8_t byte) {
     for(int i = 7; i>=4;i--) {
-        Serial.print((char)('0' + ((byte>>i)&1)));
+        printOut.print((char)('0' + ((byte>>i)&1)));
     }
-    Serial.print(" ");
+    printOut.print(" ");
     for(int i = 3; i>=0;i--) {
-        Serial.print((char)('0' + ((byte>>i)&1)));
+        printOut.print((char)('0' + ((byte>>i)&1)));
     }
 }
 
@@ -30,7 +30,7 @@ void printBytes(uint8_t bytes[], uint8_t length) {
 void printBinaryBytes(uint8_t bytes[], uint8_t length) {
     for (int i=0; i<length; i++) {
         printBinaryByte(bytes[i]);
-        Serial.print("  ");
+        printOut.print("  ");
     }
 }
 
