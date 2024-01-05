@@ -31,7 +31,9 @@ namespace Actron485 {
     }
 
     void Controller::sendZoneMessage(int zone) {
-        printOut.println("Send Zone Message");
+        if (printOut) {
+            printOut->println("Send Zone Message");
+        }
         if (zone <= 0 || zone > 8) {
             // Out of bounds
             return;
@@ -63,8 +65,10 @@ namespace Actron485 {
         serialWrite(false);
 
         zoneMessage[zindex(zone)].print();
-        printOut.println();
-        printOut.println();
+        if (printOut) {
+            printOut->println();
+            printOut->println();
+        }
     }
 
     void Controller::sendZoneConfigMessage(int zone) {
@@ -91,7 +95,9 @@ namespace Actron485 {
     }
 
     void Controller::sendZoneInitMessage(int zone) {
-        printOut.println("Send Zone Init");
+        if (printOut) {
+            printOut->println("Send Zone Init");
+        }
         serialWrite(true);  
         _serial->write((uint8_t) 0x00);
         _serial->write((uint8_t) 0xCC);
@@ -198,6 +204,10 @@ namespace Actron485 {
         _writeEnablePin = writeEnablePin;
     }
 
+    void Controller::configureLogging(Stream *stream) {
+        printOut = stream;
+    }
+
     void Controller::setup() {
         printOutMode = PrintOutMode::ChangedMessages;
 
@@ -216,35 +226,45 @@ namespace Actron485 {
         // We can only send one command at a time, per sequence
         // start with the most important ones and work our way down
         if (sendOperatingModeCommand) {
-            printOut.print("Send: ");
+            if (printOut) {
+                printOut->print("Send: ");
+            }
             sendOperatingModeCommand = false;
             nextOperatingModeCommand.generate(data);
             nextOperatingModeCommand.print();
             send = nextOperatingModeCommand.messageLength;
             
         } else if (sendZoneStateCommand) {
-            printOut.print("Send: ");
+            if (printOut) {
+                printOut->print("Send: ");
+            }
             sendZoneStateCommand = false;
             nextZoneStateCommand.generate(data);
             nextZoneStateCommand.print();
             send = nextZoneStateCommand.messageLength;
             
         } else if (sendFanModeCommand) {
-            printOut.print("Send: ");
+            if (printOut) {
+                printOut->print("Send: ");
+            }
             sendFanModeCommand = false;
             nextFanModeCommand.generate(data);
             nextFanModeCommand.print();
             send = nextFanModeCommand.messageLength;
             
         } else if (sendSetpointCommand) {
-            printOut.print("Send: ");
+            if (printOut) {
+                printOut->print("Send: ");
+            }
             sendSetpointCommand = false;
             nextSetpointCommand.generate(data);
             nextSetpointCommand.print();
             send = nextSetpointCommand.messageLength;
             
         } else if (sendZoneSetpointCustomCommand) {
-            printOut.print("Send: ");
+            if (printOut) {
+                printOut->print("Send: ");
+            }
             sendZoneSetpointCustomCommand = false;
             nextZoneSetpointCustomCommand.generate(data);
             nextZoneSetpointCustomCommand.print();
@@ -256,7 +276,9 @@ namespace Actron485 {
                     continue;
                 }
                 
-                printOut.print("Send: ");
+                if (printOut) {
+                    printOut->print("Send: ");
+                }
                 sendMasterToZoneMessage[i] = false;
                 nextMasterToZoneMessage[i].generate(data);
                 nextMasterToZoneMessage[i].print();
@@ -325,14 +347,18 @@ namespace Actron485 {
             
             if ((now - _lastCommandSentTime) < 50) {
                 // This will be a response to our command
-                printOut.println("Response Message Received");
+                if (printOut) {
+                    printOut->println("Response Message Received");
+                }
 
             } else {
                 messageType = detectActronMessageType(_serialBuffer[0]);
                 
                 switch (messageType) {
                     case MessageType::Unknown:
-                        printOut.println("Unknown Message received");
+                        if (printOut) {
+                            printOut->println("Unknown Message received");
+                        }
                         changed = true;
                         break;
                     case MessageType::CommandMasterSetpoint:
@@ -361,9 +387,9 @@ namespace Actron485 {
                         if (0 < zone && zone <= 8) {
                             zoneMessage[zindex(zone)].parse(_serialBuffer);
                             changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], zoneMessage[zindex(zone)].messageLength);
-                            if (printAll || printChangesOnly && changed) {
+                            if (printOut && (printAll || (printChangesOnly && changed))) {
                                 zoneMessage[zindex(zone)].print();
-                                printOut.println();
+                                printOut->println();
                             }
                         }
                         break;
@@ -373,9 +399,9 @@ namespace Actron485 {
                             masterToZoneMessage[zindex(zone)].parse(_serialBuffer);
                             changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], masterToZoneMessage[zindex(zone)].messageLength);
 
-                            if (printAll || printChangesOnly && changed) {
+                            if (printOut && (printAll || (printChangesOnly && changed))) {
                                 masterToZoneMessage[zindex(zone)].print();
-                                printOut.println();
+                                printOut->println();
                             }
                         }
                         break;
@@ -388,18 +414,18 @@ namespace Actron485 {
                         changed = copyBytes(_serialBuffer, stateMessage2Raw, stateMessage2.stateMessageLength);
                         stateMessage2.parse(_serialBuffer);
 
-                        if (printAll || printChangesOnly && changed) {
+                        if (printOut && (printAll || (printChangesOnly && changed))) {
                             stateMessage2.print();
-                            printOut.println();
+                            printOut->println();
                         }
                         break;
                     case MessageType::Stat1:
                         changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
                         stateMessage.parse(_serialBuffer);
 
-                        if (printAll || printChangesOnly && changed) {
+                        if (printOut && (printAll || (printChangesOnly && changed))) {
                             stateMessage.print();
-                            printOut.println();
+                            printOut->println();
                         }
                         break;
                     case MessageType::Stat2:
@@ -411,10 +437,10 @@ namespace Actron485 {
                 }
             }
 
-            if (printAll || printChangesOnly && changed) {
+            if (printOut && (printAll || (printChangesOnly && changed))) {
                 printBytes(_serialBuffer, _serialBufferIndex);
-                printOut.println();
-                printOut.println();
+                printOut->println();
+                printOut->println();
             }
 
             // We need to process after printing, else the logs appear out of order
@@ -439,8 +465,8 @@ namespace Actron485 {
             _lastQuietPeriodDetectedTime = now;
             // Reset board comms1 counter
             boardComms1Index = 0;
-            if (printOutMode == PrintOutMode::AllMessages) {
-                printOut.println("Time to Send");
+            if (printOut && printOutMode == PrintOutMode::AllMessages) {
+                printOut->println("Time to Send");
             }
             sendQueuedCommand();
         }

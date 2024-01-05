@@ -45,11 +45,20 @@ class UARTStream : public Stream {
 
 class LogStream : public Stream {
     public:
-        /* Stream interface implementation */
-        void println()
-
+        int available() override { return false; }
+        int read() override {
+            return 0;
+        }
+        int peek() override {
+            return 0;
+        }
+        size_t write(uint8_t data) override;
+        size_t write(const uint8_t *data, size_t size) override;
+        void flush() override;
     protected:
-        
+        static const int bufferSize = 200;
+        char _buffer[bufferSize];
+        int _bufferIndex = 0;
 };
 
 class Actron485Climate : public climate::Climate, public Component {
@@ -72,6 +81,8 @@ class Actron485Climate : public climate::Climate, public Component {
     protected:
         InternalGPIOPin *we_pin_;
         UARTStream stream_;
+        LogStream logStream_ = LogStream();
+        HardwareSerial logSerial_ = Serial;
 
         /// Override control to change settings of the climate device.
         void control(const climate::ClimateCall &call) override;

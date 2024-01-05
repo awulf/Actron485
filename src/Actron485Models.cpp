@@ -7,42 +7,44 @@ namespace Actron485 {
 // Actron485::ZoneToMasterMessage
 
 void ZoneToMasterMessage::print() {
-
+    if (!printOut) {
+        return;
+    }
     // Decoded
-    printOut.print("C: Zone: ");
-    printOut.print(zone);
+    printOut->println("C: Zone: ");
+    printOut->print(zone);
 
     if (type == ZoneMessageType::Normal) {
-        printOut.print(", Set Point: ");
-        printOut.print(setpoint);
+        printOut->print(", Set Point: ");
+        printOut->print(setpoint);
 
-        printOut.print(", Temp: ");
-        printOut.print(temperature);
+        printOut->print(", Temp: ");
+        printOut->print(temperature);
 
-        printOut.print("(Pre:");
-        printOut.print(temperaturePreAdjustment);
-        printOut.print(")");
+        printOut->print("(Pre:");
+        printOut->print(temperaturePreAdjustment);
+        printOut->print(")");
 
-        printOut.print(", Mode: ");
+        printOut->print(", Mode: ");
         switch (mode) {
             case ZoneMode::Off:
-                printOut.print("Off");
+                printOut->print("Off");
                 break;
             case ZoneMode::On:
-                printOut.print("On");
+                printOut->print("On");
                 break;
             case ZoneMode::Open:
-                printOut.print("Open");
+                printOut->print("Open");
                 break;
         }
 
     } else if (type == ZoneMessageType::Config) {
-        printOut.print(", Temp Offset: ");
-        printOut.print(temperature);
+        printOut->print(", Temp Offset: ");
+        printOut->print(temperature);
 
     } else if (type == ZoneMessageType::InitZone) {
-        printOut.print(", Init Zone");
-        printOut.print(temperature);
+        printOut->print(", Init Zone");
+        printOut->print(temperature);
     }
 }
 
@@ -164,43 +166,47 @@ int16_t ZoneToMasterMessage::zoneTempToMaster(double temperature) {
 // Actron485::MasterToZoneMessage
 
 void MasterToZoneMessage::print() {
-    printOut.print("M: Zone: ");
-    printOut.print(zone);
+    if (!printOut) {
+        return;
+    }
 
-    printOut.print(", Set Point: ");
-    printOut.print(setpoint);
+    printOut->print("M: Zone: ");
+    printOut->print(zone);
 
-    printOut.print(", Temp: ");
-    printOut.print(temperature);
+    printOut->print(", Set Point: ");
+    printOut->print(setpoint);
 
-    printOut.print(", SP Range: ");
-    printOut.print(minSetpoint);
-    printOut.print("-");
-    printOut.print(maxSetpoint);
+    printOut->print(", Temp: ");
+    printOut->print(temperature);
 
-    printOut.print(", Zone: ");
-    printOut.print(on ? "On" : "Off");
+    printOut->print(", SP Range: ");
+    printOut->print(minSetpoint);
+    printOut->print("-");
+    printOut->print(maxSetpoint);
+
+    printOut->print(", Zone: ");
+    printOut->print(on ? "On" : "Off");
 
     if (on) {
-        printOut.print(", Compr. Mode: ");
-        printOut.print(compressorMode ? "On " : "Off");
+        printOut->print(", Compr. Mode: ");
+        printOut->print(compressorMode ? "On " : "Off");
         if (compressorMode) {
-            printOut.print(heating ? "Heating" : "Cooling");
+            printOut->print(heating ? "Heating" : "Cooling");
         }
 
         if (fanMode) {
-            printOut.print(", Fan Mode");
+            printOut->print(", Fan Mode");
         } else if (compressorActive) {
-            printOut.print(", Compr. Active");
+            printOut->print(", Compr. Active");
         }
     }
 
-    printOut.print(", Damper Pos: ");
-    printOut.print((int)((double)damperPosition/5.0*100.0));
-    printOut.print("%");
+    printOut->print(", Damper Pos: ");
+    printOut->print((int)((double)damperPosition/5.0*100.0));
+    printOut->print("%");
 
     if (maybeAdjusting) {
-        printOut.print(", ??Adjusting??");
+        printOut->print(", ??Adjusting??");
     }
 }
 
@@ -275,8 +281,8 @@ void MasterToZoneMessage::generate(uint8_t data[7]) {
 // Actron485::MasterSetpointCommand
 
 void MasterSetpointCommand::print() {
-    printOut.print("Command Master Temperature Setpoint: ");
-    printOut.println(temperature);
+    printOut->print("Command Master Temperature Setpoint: ");
+    printOut->println(temperature);
 }
 
 void MasterSetpointCommand::parse(uint8_t data[2]) {
@@ -322,34 +328,38 @@ bool FanModeCommand::isContinuous() {
 }
 
 void FanModeCommand::print() {
-    printOut.print("Command: Fan Mode: ");
+    if (!printOut) {
+        return;
+    }
+
+    printOut->print("Command: Fan Mode: ");
     switch (fanMode) {
         case FanMode::Off:
-            printOut.println("Off");
+            printOut->println("Off");
             break;
         case FanMode::Low:
-            printOut.println("Low");
+            printOut->println("Low");
             break;
         case FanMode::Medium:
-            printOut.println("Medium");
+            printOut->println("Medium");
             break;
         case FanMode::High:
-            printOut.println("High");
+            printOut->println("High");
             break;
         case FanMode::Esp:
-            printOut.println("ESP");
+            printOut->println("ESP");
             break;
         case FanMode::LowContinuous:
-            printOut.println("Low Continuous");
+            printOut->println("Low Continuous");
             break;
         case FanMode::MediumContinuous:
-            printOut.println("Medium Continuous");
+            printOut->println("Medium Continuous");
             break;
         case FanMode::HighContinuous:
-            printOut.println("High Continuous");
+            printOut->println("High Continuous");
             break;
         case FanMode::EspContinuous:
-            printOut.println("ESP Continuous");
+            printOut->println("ESP Continuous");
             break;
     }
 }
@@ -367,12 +377,16 @@ void FanModeCommand::generate(uint8_t data[2]) {
 // Actron485::ZoneStateCommand
 
 void ZoneStateCommand::print() {
-    printOut.println("Command: Zone State: ");
-    printOut.println("1 2 3 4 5 6 7 8");
-    for (int i = 0; i<8; i++) {
-        printOut.print(zoneOn[i] ? "1 " : "_ ");
+    if (!printOut) {
+        return;
     }
-    printOut.println();
+
+    printOut->println("Command: Zone State: ");
+    printOut->println("1 2 3 4 5 6 7 8");
+    for (int i = 0; i<8; i++) {
+        printOut->print(zoneOn[i] ? "1 " : "_ ");
+    }
+    printOut->println();
 }
 
 void ZoneStateCommand::parse(uint8_t data[2]) {
@@ -407,22 +421,26 @@ bool OperatingModeCommand::onCommand() {
 }
 
 void OperatingModeCommand::print() {
-    printOut.print("Command: Operating Mode: ");
+    if (!printOut) {
+        return;
+    }
+
+    printOut->print("Command: Operating Mode: ");
     switch (mode) {
         case OperatingMode::Off:
-            printOut.println("Off");
+            printOut->println("Off");
             break;
         case OperatingMode::FanOnly:
-            printOut.println("Fan Only");
+            printOut->println("Fan Only");
             break;
         case OperatingMode::Auto:
-            printOut.println("Auto");
+            printOut->println("Auto");
             break;
         case OperatingMode::Cool:
-            printOut.println("Cool");
+            printOut->println("Cool");
             break;
         case OperatingMode::Heat:
-            printOut.println("Heat");
+            printOut->println("Heat");
             break;
     }
 }
@@ -440,14 +458,18 @@ void OperatingModeCommand::generate(uint8_t data[2]) {
 // Actron485::ZoneSetpointCustomCommand
 
 void ZoneSetpointCustomCommand::print() {
-    printOut.print("Command: Zone ");
-    printOut.print(zone);
-    printOut.print(", Temperature Setpoint: ");
-    printOut.print(temperature);
-    if (adjustMaster) {
-        printOut.print(", Force Master SP");
+    if (!printOut) {
+        return;
     }
-    printOut.println();
+
+    printOut->print("Command: Zone ");
+    printOut->print(zone);
+    printOut->print(", Temperature Setpoint: ");
+    printOut->print(temperature);
+    if (adjustMaster) {
+        printOut->print(", Force Master SP");
+    }
+    printOut->println();
 }
 
 void ZoneSetpointCustomCommand::parse(uint8_t data[3]) {
@@ -467,86 +489,90 @@ void ZoneSetpointCustomCommand::generate(uint8_t data[3]) {
 // Actron485::StateMessage
 
 void StateMessage::print() {
-    printOut.print("State: ");
-    printOut.print("Operating Mode: ");
+    if (!printOut) {
+        return;
+    }
+
+    printOut->print("State: ");
+    printOut->print("Operating Mode: ");
     switch (operatingMode) {
         case OperatingMode::Off:
-            printOut.print("Off");
+            printOut->print("Off");
             switch (lastOperatingMode) {
                 case OperatingMode::Auto:
-                    printOut.print("-Auto");
+                    printOut->print("-Auto");
                     break;
                 case OperatingMode::Cool:
-                    printOut.print("-Cool");
+                    printOut->print("-Cool");
                     break;
                 case OperatingMode::Heat:
-                    printOut.print("-Heat");
+                    printOut->print("-Heat");
                     break;
                 default:
-                    printOut.print("-Fan Only");
+                    printOut->print("-Fan Only");
                     break;
             }
             break;
         case OperatingMode::FanOnly:
-            printOut.print("Fan Only");
+            printOut->print("Fan Only");
             break;
         case OperatingMode::Auto:
-            printOut.print("Auto");
+            printOut->print("Auto");
             break;
         case OperatingMode::Cool:
-            printOut.print("Cool");
+            printOut->print("Cool");
             break;
         case OperatingMode::Heat:
-            printOut.print("Heat");
+            printOut->print("Heat");
             break;
     }
-    printOut.print(" - ");
+    printOut->print(" - ");
     if (systemActive) {
-        printOut.print("Active");
+        printOut->print("Active");
     } else {
-        printOut.print("Idle");
+        printOut->print("Idle");
     }
 
-    printOut.print(", Fan Mode: ");
+    printOut->print(", Fan Mode: ");
     switch (fanMode) {
         case FanMode::Off:
-            printOut.print("Off");
+            printOut->print("Off");
             break;
         case FanMode::Low:
-            printOut.print("Low");
+            printOut->print("Low");
             break;
         case FanMode::Medium:
-            printOut.print("Medium");
+            printOut->print("Medium");
             break;
         case FanMode::High:
-            printOut.print("High");
+            printOut->print("High");
             break;
         case FanMode::Esp:
-            printOut.print("ESP");
+            printOut->print("ESP");
             break;
     }
     if (continuousFan) {
-        printOut.print(" Continuous");
+        printOut->print(" Continuous");
     } 
-    printOut.print(" - ");
+    printOut->print(" - ");
     if (fanActive) {
-        printOut.print("Active");
+        printOut->print("Active");
     } else {
-        printOut.print("Idle");
+        printOut->print("Idle");
     }
 
-    printOut.print(", Setpoint: ");
-    printOut.print(setpoint);
+    printOut->print(", Setpoint: ");
+    printOut->print(setpoint);
 
-    printOut.print(", Temperature: ");
-    printOut.print(temperature);
+    printOut->print(", Temperature: ");
+    printOut->print(temperature);
 
-    printOut.print(", Zones:");
+    printOut->print(", Zones:");
     for (int i=0; i<8; i++) {
-        printOut.print(" ");
-        printOut.print(i+1);
-        printOut.print(":");
-        printOut.print((zoneOn[i] ? "On" : "Off"));
+        printOut->print(" ");
+        printOut->print(i+1);
+        printOut->print(":");
+        printOut->print((zoneOn[i] ? "On" : "Off"));
     }
 }
 
@@ -597,86 +623,90 @@ void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
 // Actron485::StateMessage2
 
 void StateMessage2::print() {
-    printOut.print("State 2: ");
-    printOut.print("Operating Mode: ");
+    if (!printOut) {
+        return;
+    }
+
+    printOut->print("State 2: ");
+    printOut->print("Operating Mode: ");
     switch (operatingMode) {
         case OperatingMode::Off:
-            printOut.print("Off");
+            printOut->print("Off");
             switch (lastOperatingMode) {
                 case OperatingMode::Auto:
-                    printOut.print("-Auto");
+                    printOut->print("-Auto");
                     break;
                 case OperatingMode::Cool:
-                    printOut.print("-Cool");
+                    printOut->print("-Cool");
                     break;
                 case OperatingMode::Heat:
-                    printOut.print("-Heat");
+                    printOut->print("-Heat");
                     break;
                 default:
-                    printOut.print("-Fan Only");
+                    printOut->print("-Fan Only");
                     break;
             }
             break;
         case OperatingMode::FanOnly:
-            printOut.print("Fan Only");
+            printOut->print("Fan Only");
             break;
         case OperatingMode::Auto:
-            printOut.print("Auto");
+            printOut->print("Auto");
             break;
         case OperatingMode::Cool:
-            printOut.print("Cool");
+            printOut->print("Cool");
             break;
         case OperatingMode::Heat:
-            printOut.print("Heat");
+            printOut->print("Heat");
             break;
     }
-    printOut.print(" - ");
+    printOut->print(" - ");
     if (systemActive) {
-        printOut.print("Active");
+        printOut->print("Active");
     } else {
-        printOut.print("Idle");
+        printOut->print("Idle");
     }
 
-    printOut.print(", Fan Mode: ");
+    printOut->print(", Fan Mode: ");
     switch (fanMode) {
         case FanMode::Off:
-            printOut.print("Off");
+            printOut->print("Off");
             break;
         case FanMode::Low:
-            printOut.print("Low");
+            printOut->print("Low");
             break;
         case FanMode::Medium:
-            printOut.print("Medium");
+            printOut->print("Medium");
             break;
         case FanMode::High:
-            printOut.print("High");
+            printOut->print("High");
             break;
         case FanMode::Esp:
-            printOut.print("ESP");
+            printOut->print("ESP");
             break;
     }
     if (continuousFan) {
-        printOut.print(" Continuous");
+        printOut->print(" Continuous");
     } 
-    printOut.print(" - ");
+    printOut->print(" - ");
     if (fanActive) {
-        printOut.print("Active");
+        printOut->print("Active");
     } else {
-        printOut.print("Idle");
+        printOut->print("Idle");
     }
 
-    printOut.print(", Setpoint: ");
-    printOut.print(setpoint);
+    printOut->print(", Setpoint: ");
+    printOut->print(setpoint);
 
-    printOut.print(", Temperature: ");
-    printOut.print(temperature);
+    printOut->print(", Temperature: ");
+    printOut->print(temperature);
 
-    printOut.print(", Zones:");
+    printOut->print(", Zones:");
     for (int i=0; i<8; i++) {
-        printOut.print(" ");
-        printOut.print(i+1);
-        printOut.print(":");
-        printOut.print((zoneOn[i] ? "On" : "Off"));
+        printOut->print(" ");
+        printOut->print(i+1);
+        printOut->print(":");
+        printOut->print((zoneOn[i] ? "On" : "Off"));
     }
 }
 

@@ -3,20 +3,28 @@
 namespace Actron485 {
 
 void printByte(uint8_t byte) {
-    if (byte <= 0x0f) {
-        printOut.print("0");  
+    if (printOut == NULL) {
+        return;
     }
-    printOut.print(byte, HEX);
-    printOut.print(" ");
+
+    if (byte <= 0x0f) {
+        printOut->print("0");  
+    }
+    printOut->print(byte, HEX);
+    printOut->print(" ");
 }
 
 void printBinaryByte(uint8_t byte) {
-    for(int i = 7; i>=4;i--) {
-        printOut.print((char)('0' + ((byte>>i)&1)));
+    if (printOut == NULL) {
+        return;
     }
-    printOut.print(" ");
+
+    for(int i = 7; i>=4;i--) {
+        printOut->print((char)('0' + ((byte>>i)&1)));
+    }
+    printOut->print(" ");
     for(int i = 3; i>=0;i--) {
-        printOut.print((char)('0' + ((byte>>i)&1)));
+        printOut->print((char)('0' + ((byte>>i)&1)));
     }
 }
 
@@ -28,9 +36,13 @@ void printBytes(uint8_t bytes[], uint8_t length) {
 }
 
 void printBinaryBytes(uint8_t bytes[], uint8_t length) {
+    if (printOut == NULL) {
+        return;
+    }
+
     for (int i=0; i<length; i++) {
         printBinaryByte(bytes[i]);
-        printOut.print("  ");
+        printOut->print("  ");
     }
 }
 

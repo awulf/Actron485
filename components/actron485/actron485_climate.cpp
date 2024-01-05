@@ -12,6 +12,38 @@ Actron485Climate::Actron485Climate() = default;
 static Actron485::Controller actronController = Actron485::Controller();
 static long counter = 0;
 
+size_t LogStream::write(uint8_t data) {
+    if (_bufferIndex >= bufferSize) {
+        // Need to print contents
+        _bufferIndex = 0;
+        return 0;
+    }
+
+    if (data == '\0') {
+        ESP_LOGD(TAG, "ZERO");
+    } else if (data == '\n') {
+        _buffer[_bufferIndex] = '\0';
+        ESP_LOGD(TAG, "BUFF: %s %d", _buffer, _bufferIndex);
+        _bufferIndex = 0;
+    } else {
+        _buffer[_bufferIndex] = data;
+        _bufferIndex++;
+    }
+
+    return 1;
+}
+    
+size_t LogStream::write(const uint8_t *data, size_t size) {
+    for (int i=0; i<size; i++) {
+        write(data[i]);
+    }
+    return size;
+}
+
+void LogStream::flush() {
+    ESP_LOGD(TAG, "FLUSH");
+}
+
 void Actron485Climate::setup() {
 //     this->controller.getMasterSetpoint();
     ESP_LOGD(TAG, "SETUP");
@@ -25,14 +57,13 @@ void Actron485Climate::setup() {
         ESP_LOGD(TAG, "WE %d", we_pin);
 
         actronController.configure(stream_, 25);
-        actronController.printOutMode = Actron485::PrintOutMode::StatusOnly;
+        actronController.configureLogging(&logSerial_);
+        actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
     }
 }
 
 void Actron485Climate::loop() {
-    // if (actronController != NULL) {
-        actronController.loop();
-    // }
+    actronController.loop();
     
     if (millis()-counter > 1000) {
         ESP_LOGD(TAG, "Receiving Data: %s", actronController.receivingData() ? "YES" : "NO");

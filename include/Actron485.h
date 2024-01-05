@@ -91,6 +91,10 @@ public:
     /// @param writeEnablePin for write enable, set to 0 if not used
     void configure(Stream &stream, uint8_t writeEnablePin);
 
+    /// @brief pass a different stream to send log messages to
+    /// @param stream
+    void configureLogging(Stream *stream);
+
     /// @brief Zone 1 - 8 (indexed 0-7), set bool to corresponding number to make the zone controlled by this controller
     bool zoneControlled[8];
 
