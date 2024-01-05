@@ -667,6 +667,17 @@ namespace Actron485 {
         return 0;
     }
 
+    double Controller::getMasterCurrentTemperature() {
+        if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.temperature;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.temperature;
+        }
+        return 0;
+    }
+
     bool Controller::isSystemIdle() {
         if (stateMessage.initialised == true) {
             // Read from State Message

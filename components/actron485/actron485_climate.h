@@ -3,13 +3,19 @@
 #include "esphome/core/component.h"
 #include "esphome/core/automation.h"
 #include "esphome/components/climate/climate.h"
+#include "esphome/core/defines.h"
 #include "esphome/components/uart/uart.h"
-// #include "esphome/core/hal.h"
-
 #include "Actron485.h"
 
 namespace esphome {
 namespace actron485 {
+
+using climate::ClimateCall;
+using climate::ClimatePreset;
+using climate::ClimateTraits;
+using climate::ClimateMode;
+using climate::ClimateSwingMode;
+using climate::ClimateFanMode;
 
 /* Stream from UART component (copied from Midea component) */
 class UARTStream : public Stream {
@@ -69,25 +75,29 @@ class Actron485Climate : public climate::Climate, public Component {
         void loop() override;
 
         void set_we_pin(InternalGPIOPin *pin) { we_pin_ = pin; }
+        void set_has_esp(bool available) { has_esp_auto_ = available; }
+        void set_has_ultima(bool available) { has_ultima_ = available; }
+        void set_logging_mode(int logging_mode) { logging_mode_ = logging_mode; }
         void set_uart_parent(uart::UARTComponent *parent) { this->stream_.set_uart(parent); }
 
     //     void dump_config() override;
+        void update_status();
 
     //     Trigger<> *get_idle_trigger() const;
-    //     Actron485::Controller *controller = new Actron485::Controller(1, 2, 3);
-
-    //     long counter;
 
     protected:
         InternalGPIOPin *we_pin_;
         UARTStream stream_;
-        LogStream logStream_ = LogStream();
-        HardwareSerial logSerial_ = Serial;
+        LogStream logStream_;
+        int logging_mode_;
+        bool has_esp_auto_;
+        bool has_ultima_;
 
         /// Override control to change settings of the climate device.
         void control(const climate::ClimateCall &call) override;
         /// Return the traits of this controller.
         climate::ClimateTraits traits() override;
+
 
     //     // Operating Modes
     //     bool supports_auto_{true};

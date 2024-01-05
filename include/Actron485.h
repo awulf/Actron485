@@ -243,6 +243,12 @@ public:
     /// @returns temperature in °C
     double getMasterSetpoint();
 
+    /// @brief get the master current temperature reading.
+    /// This temperature may be the average of multiple sensors depending on configuration
+    /// and operating zones
+    /// @returns temperature in °C
+    double getMasterCurrentTemperature();
+
     /// @brief if the compressor is idle, this can be if AC is on but not active, or off.
     /// @return true if idle, false otherwise
     bool isSystemIdle();

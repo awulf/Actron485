@@ -234,7 +234,7 @@ enum class OperatingMode: uint8_t {
     OffAuto =   0b00000100,
     OffCool =   0b00000010,
     OffHeat =   0b00000001,
-    FanOnly =   0b00010000,
+    FanOnly =   0b00010010,
     Auto =      0b00001100,
     Cool =      0b00001010,
     Heat =      0b00001001
