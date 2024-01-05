@@ -2,6 +2,8 @@
 
 namespace Actron485 {
 
+Stream *printOut = NULL;
+
 void printByte(uint8_t byte) {
     if (printOut == NULL) {
         return;

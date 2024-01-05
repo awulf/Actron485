@@ -2,7 +2,7 @@
 
 namespace Actron485 {
 
-static Stream *printOut = NULL;
+extern Stream *printOut;
 
 void printByte(uint8_t byte);
 void printBinaryByte(uint8_t byte);

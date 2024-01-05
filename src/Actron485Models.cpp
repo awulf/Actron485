@@ -7,11 +7,12 @@ namespace Actron485 {
 // Actron485::ZoneToMasterMessage
 
 void ZoneToMasterMessage::print() {
+    Serial.println((int)&printOut);
     if (!printOut) {
         return;
     }
     // Decoded
-    printOut->println("C: Zone: ");
+    printOut->print("C: Zone: ");
     printOut->print(zone);
 
     if (type == ZoneMessageType::Normal) {
