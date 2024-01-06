@@ -528,10 +528,19 @@ void StateMessage::print() {
             break;
     }
     printOut->print(" - ");
-    if (systemActive) {
-        printOut->print("Active");
-    } else {
-        printOut->print("Idle");
+    switch (compressorMode) {
+        case CompressorMode::Unknown:
+            printOut->print("Unknown");
+            break;
+        case CompressorMode::Idle:
+            printOut->print("Idle");
+            break;
+        case CompressorMode::Cooling:
+            printOut->print("Cooling");
+            break;
+        case CompressorMode::Heating:
+            printOut->print("Heating");
+            break;
     }
 
     printOut->print(", Fan Mode: ");
@@ -604,6 +613,7 @@ void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
             fanMode = FanMode::High;
             break;
         case 0b00101:
+        case 0b00001:
             fanMode = FanMode::Esp;
             break;
     }
@@ -617,7 +627,22 @@ void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
     // And note what it has been in the past
     lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
 
-    systemActive = data[13] & 0b10000000 == 0b10000000;
+    // Compressor mode
+    uint8_t compressorModeRaw = (data[13] & 0b01100000) >> 5;
+    switch (compressorModeRaw) {
+        case 0:
+            compressorMode = CompressorMode::Idle;
+            break;
+        case 1:
+            compressorMode = CompressorMode::Heating;
+            break;
+        case 2:
+            compressorMode = CompressorMode::Cooling;
+            break;
+        default:
+            compressorMode = CompressorMode::Unknown;
+            break;       
+    }
 }
 
 ///////////////////////////////////
@@ -662,10 +687,19 @@ void StateMessage2::print() {
             break;
     }
     printOut->print(" - ");
-    if (systemActive) {
-        printOut->print("Active");
-    } else {
-        printOut->print("Idle");
+    switch (compressorMode) {
+        case CompressorMode::Unknown:
+            printOut->print("Unknown");
+            break;
+        case CompressorMode::Idle:
+            printOut->print("Idle");
+            break;
+        case CompressorMode::Cooling:
+            printOut->print("Cooling");
+            break;
+        case CompressorMode::Heating:
+            printOut->print("Heating");
+            break;
     }
 
     printOut->print(", Fan Mode: ");
@@ -750,7 +784,23 @@ void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
     // And note what it has been in the past
     lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
 
-    systemActive = data[3] & 0b10000000 == 0b10000000;
+    // Compressor mode
+    uint8_t compressorModeRaw = (data[3] & 0b01100000) >> 5;
+    switch (compressorModeRaw) {
+        case 0:
+            compressorMode = CompressorMode::Idle;
+            break;
+        case 1:
+            compressorMode = CompressorMode::Heating;
+            break;
+        case 2:
+            compressorMode = CompressorMode::Cooling;
+            break;
+        default:
+            compressorMode = CompressorMode::Unknown;
+            break;       
+    }
+
 }
 
 }

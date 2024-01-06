@@ -49,8 +49,8 @@ eg:
 02:
 03: AC Mode
     0 - 
-    1 - 
-    2 - 0 Idle, 1 Active   
+    1 - Active: (2bit) 0 - Idle, 1 - Heating, 2 - Cooling
+    2 -     "
     3 - Mode: 00xxx = Off - Off can store it's last used compressor operating mode, e.g. 00010 for off-cool
     4       " 10000 = Fan Only
     5       " 0x100 = Auto
@@ -99,8 +99,8 @@ A0... Status
 12: 
 13: AC Mode
     0 - 
-    1 - 
-    2 - 0 Idle, 1 Active   
+    1 - Active: (2bit) 0 - Idle, 1 - Heating, 2 - Cooling
+    2 -     "
     3 - Mode: 00xxx = Off - Off can store it's last used compressor operating mode, e.g. 00010 for off-cool
     4       " 10000 = Fan Only
     5       " 0x100 = Auto

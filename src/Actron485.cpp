@@ -636,10 +636,10 @@ namespace Actron485 {
     OperatingMode Controller::getOperatingMode() {
         if (stateMessage.initialised == true) {
             // Read from State Message
-            return stateMessage.lastOperatingMode;
+            return stateMessage.operatingMode;
         } else if (stateMessage2.initialised == true) {
             // Read from State 2 Message
-            return stateMessage2.lastOperatingMode;
+            return stateMessage2.operatingMode;
         }
         return OperatingMode::Auto;
     }
@@ -678,15 +678,15 @@ namespace Actron485 {
         return 0;
     }
 
-    bool Controller::isSystemIdle() {
+    CompressorMode Controller::getCompressorMode() {
         if (stateMessage.initialised == true) {
             // Read from State Message
-            return stateMessage.systemActive == false;;
+            return stateMessage.compressorMode;
         } else if (stateMessage2.initialised == true) {
             // Read from State 2 Message
-            return stateMessage2.systemActive == false;;
+            return stateMessage2.compressorMode;
         }
-        return true;
+        return CompressorMode::Unknown;
     }
 
     bool Controller::isFanIdle() {

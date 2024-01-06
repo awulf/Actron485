@@ -249,9 +249,9 @@ public:
     /// @returns temperature in °C
     double getMasterCurrentTemperature();
 
-    /// @brief if the compressor is idle, this can be if AC is on but not active, or off.
-    /// @return true if idle, false otherwise
-    bool isSystemIdle();
+    /// @brief if the compressor is idle, or active
+    /// @return state of compressor
+    CompressorMode getCompressorMode();
 
     /// @brief if the fan is idle, this can be if AC is on but not active, or off
     /// @return true if fan idle, false otherwise

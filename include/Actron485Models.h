@@ -98,6 +98,13 @@ enum class ZoneOperationMode {
     Heating
 };
 
+enum class CompressorMode {
+    Unknown,
+    Idle,
+    Cooling,
+    Heating
+};
+
 struct MasterToZoneMessage {
     /// @brief struct has initialised data
     bool initialised;
@@ -308,8 +315,8 @@ struct StateMessage {
     OperatingMode operatingMode;
     /// @brief If system is off this is the last mode it operated in, thus can be used to turn the system back on to last used state
     OperatingMode lastOperatingMode;
-    /// @brief True if system is actively cooling/heating, false if idle
-    bool systemActive;
+    /// @brief if system is actively cooling/heating, or idle
+    CompressorMode compressorMode;
 
     /// @brief System fan mode (not including continuous mode)
     FanMode fanMode;
@@ -346,8 +353,8 @@ struct StateMessage2 {
     OperatingMode operatingMode;
     /// @brief If system is off this is the last mode it operated in, thus can be used to turn the system back on to last used state
     OperatingMode lastOperatingMode;
-    /// @brief True if system is actively cooling/heating, false if idle
-    bool systemActive;
+    /// @brief if system is actively cooling/heating, or idle
+    CompressorMode compressorMode;
 
     /// @brief System fan mode (not including continuous mode)
     FanMode fanMode;

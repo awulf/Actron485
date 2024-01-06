@@ -16,6 +16,7 @@ using climate::ClimateTraits;
 using climate::ClimateMode;
 using climate::ClimateSwingMode;
 using climate::ClimateFanMode;
+using climate::ClimateAction;
 
 /* Stream from UART component (copied from Midea component) */
 class UARTStream : public Stream {
@@ -76,11 +77,14 @@ class Actron485Climate : public climate::Climate, public Component {
 
         void set_we_pin(InternalGPIOPin *pin) { we_pin_ = pin; }
         void set_has_esp(bool available) { has_esp_auto_ = available; }
-        void set_has_ultima(bool available) { has_ultima_ = available; }
         void set_logging_mode(int logging_mode) { logging_mode_ = logging_mode; }
         void set_uart_parent(uart::UARTComponent *parent) { this->stream_.set_uart(parent); }
+        void set_ultima_settings(bool available, bool adjusts_master_target) { 
+            has_ultima_ = available;
+            ultima_adjusts_master_setpoint_ = adjusts_master_target; 
+        }
 
-    //     void dump_config() override;
+        void dump_config() override;
         void update_status();
 
     //     Trigger<> *get_idle_trigger() const;
@@ -92,35 +96,13 @@ class Actron485Climate : public climate::Climate, public Component {
         int logging_mode_;
         bool has_esp_auto_;
         bool has_ultima_;
+        bool ultima_adjusts_master_setpoint_;
 
         /// Override control to change settings of the climate device.
         void control(const climate::ClimateCall &call) override;
+
         /// Return the traits of this controller.
         climate::ClimateTraits traits() override;
-
-
-    //     // Operating Modes
-    //     bool supports_auto_{true};
-    //     bool supports_cool_{true};
-    //     bool supports_heat_{true};
-    //     bool supports_fan_only_{true};
-
-    //     // ESP Fan Speed
-    //     bool supports_fan_mode_auto_{true};
-
-    //     // Fan Speeds
-    //     bool supports_fan_mode_low_{true};
-    //     bool supports_fan_mode_medium_{true};
-    //     bool supports_fan_mode_high_{true};
-
-    //     // Continuous Fan Mode
-    //     bool supports_fan_with_cooling_{true};
-    //     bool supports_fan_with_heating_{true};
-        
-    //     Trigger<> *idle_trigger_;
-
-    //     Trigger<> *cool_trigger_;
-    //     Trigger<> *heat_trigger_;
 
 };
 

@@ -12,7 +12,9 @@ from esphome.const import (
 CONF_WRITE_ENABLE_PIN = "write_enable_pin"
 CONF_ZONE_NAMES = "zones"
 CONF_ESP_FAN_AVAILABLE = "esp_fan_available"
-CONF_ULTIMA_AVAILABLE = "ultima_available"
+CONF_ULTIMA = "ultima"
+CONF_ULTIMA_AVAILABLE = "available"
+CONF_ULTIMA_ZONES_ADJUSTS_MASTER = "adjust_master_target"
 CONF_LOGGING_MODE = "logging_mode"
 
 CONF_ZONE_NUMBER = "number"
@@ -28,6 +30,11 @@ ALLOWED_LOGGING_MODES = {
 zone_entry_parameter = {
     cv.Required(CONF_ZONE_NUMBER): cv.int_,
     cv.Required(CONF_ZONE_NAME): cv.string,
+}
+
+ultima_config_parameter = {
+    cv.Optional(CONF_ULTIMA_AVAILABLE, default=True): cv.boolean,
+    cv.Optional(CONF_ULTIMA_ZONES_ADJUSTS_MASTER, default=False): cv.boolean,
 }
 
 CODEOWNERS = ["@awulf"]
@@ -46,13 +53,12 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_LOGGING_MODE, default="STATUS"): cv.enum(ALLOWED_LOGGING_MODES, upper=True),  
             cv.Optional(CONF_ESP_FAN_AVAILABLE, default=False): cv.boolean,
-            cv.Optional(CONF_ULTIMA_AVAILABLE, default=False): cv.boolean,
+            cv.Optional(CONF_ULTIMA): cv.Schema(ultima_config_parameter),
         }
     )
     .extend(uart.UART_DEVICE_SCHEMA)
     .extend(cv.COMPONENT_SCHEMA)
 )
-
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
@@ -66,8 +72,11 @@ async def to_code(config):
     has_esp = config[CONF_ESP_FAN_AVAILABLE]
     cg.add(var.set_has_esp(has_esp))
 
-    has_ultima = config[CONF_ULTIMA_AVAILABLE]
-    cg.add(var.set_has_ultima(has_ultima))
+    if CONF_ULTIMA in config:
+        ultima_config = config[CONF_ULTIMA]
+        has_ultima = ultima_config[CONF_ULTIMA_AVAILABLE]
+        adjusts_master = ultima_config[CONF_ULTIMA_ZONES_ADJUSTS_MASTER]
+        cg.add(var.set_ultima_settings(has_ultima, adjusts_master))
 
     logging_mode = ALLOWED_LOGGING_MODES[config[CONF_LOGGING_MODE]]
     cg.add(var.set_logging_mode(logging_mode))
