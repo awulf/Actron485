@@ -413,6 +413,7 @@ namespace Actron485 {
                     case MessageType::IndoorBoard2:
                         changed = copyBytes(_serialBuffer, stateMessage2Raw, stateMessage2.stateMessageLength);
                         stateMessage2.parse(_serialBuffer);
+                        statusLastReceivedTime = now;
 
                         if (printOut && (printAll || (printChangesOnly && changed))) {
                             stateMessage2.print();
@@ -422,6 +423,7 @@ namespace Actron485 {
                     case MessageType::Stat1:
                         changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
                         stateMessage.parse(_serialBuffer);
+                        statusLastReceivedTime = now;
 
                         if (printOut && (printAll || (printChangesOnly && changed))) {
                             stateMessage.print();
@@ -517,10 +519,7 @@ namespace Actron485 {
     }
 
     bool Controller::getSystemOn() {
-        if (sendOperatingModeCommand == true) {
-            // Read from command sent, for instant feedback
-            return nextOperatingModeCommand.onCommand(); 
-        } else if (stateMessage.initialised == true) {
+        if (stateMessage.initialised == true) {
             // Read from State Message
             return stateMessage.operatingMode != OperatingMode::Off;
         } else if (stateMessage2.initialised == true) {
@@ -558,10 +557,7 @@ namespace Actron485 {
     }
 
     FanMode Controller::getFanSpeed() {
-        if (sendFanModeCommand == true) {
-            // Read from command sent, for instant feedback
-            return nextFanModeCommand.getFanSpeed(); 
-        } else if (stateMessage.initialised == true) {
+        if (stateMessage.initialised == true) {
             // Read from State Message
             return stateMessage.fanMode;
         } else if (stateMessage2.initialised == true) {
@@ -607,10 +603,7 @@ namespace Actron485 {
     }
 
     bool Controller::getContinuousFanMode() {
-        if (sendFanModeCommand == true) {
-            // Read from command sent, for instant feedback
-            return nextFanModeCommand.isContinuous();
-        } else if (stateMessage.initialised == true) {
+        if (stateMessage.initialised == true) {
             // Read from State Message
             return stateMessage.continuousFan;
         } else if (stateMessage2.initialised == true) {
@@ -654,10 +647,7 @@ namespace Actron485 {
     }
     
     double Controller::getMasterSetpoint() {
-        if (sendSetpointCommand == true) {
-            // Read from command sent, for instant feedback
-            return nextSetpointCommand.temperature;
-        } else if (stateMessage.initialised == true) {
+        if (stateMessage.initialised == true) {
             // Read from State Message
             return stateMessage.setpoint;
         } else if (stateMessage2.initialised == true) {
@@ -714,10 +704,7 @@ namespace Actron485 {
     }
 
     bool Controller::getZoneOnState(uint8_t zone) {
-        if (sendZoneStateCommand == true) {
-            // Read from command sent, for instant feedback
-            return nextZoneStateCommand.zoneOn[zindex(zone)];
-        } else if (stateMessage.initialised == true) {
+        if (stateMessage.initialised == true) {
             // Read from State Message
             return stateMessage.zoneOn[zindex(zone)];
         } else if (stateMessage2.initialised == true) {

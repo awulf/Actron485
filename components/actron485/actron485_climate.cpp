@@ -86,6 +86,12 @@ template<typename T> void update_property(T &property, const T &value, bool &fla
 }
 
 void Actron485Climate::update_status() {
+    if (last_command_sent_time_ < actronController.statusLastReceivedTime) {
+        // Don't check until we received a new status message after sending a command
+        // to debounce status changes 
+        return;
+    }
+
     bool has_changed = false;
     // Target/Setpoint Tempeature
     update_property(this->target_temperature, (float)actronController.getMasterSetpoint(), has_changed);
@@ -113,12 +119,6 @@ void Actron485Climate::update_status() {
         this->publish_state();
     }
 }
-
-// Actron485Climate::Actron485Climate() : idle_trigger_(new Trigger<>()), cool_trigger_(new Trigger<>()), heat_trigger_(new Trigger<>()) {}
-
-// Trigger<> *Actron485Climate::get_idle_trigger() const { 
-//     return this->idle_trigger_; 
-// }
 
 void Actron485Climate::control(const climate::ClimateCall &call) {
     if (call.get_mode().has_value()) {
@@ -165,8 +165,6 @@ climate::ClimateTraits Actron485Climate::traits() {
     if (has_esp_auto_) {
         traits.add_supported_fan_mode(ClimateFanMode::CLIMATE_FAN_AUTO);
     }
-
-
 
 //   traits.set_supports_action(true);
     return traits;

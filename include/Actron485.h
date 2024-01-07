@@ -118,6 +118,8 @@ public:
 
     /// @brief system millis when data was last received
     unsigned long dataLastReceivedTime;
+    /// @brief system millis when the last status message arrived (useful for comparing against a command sent time for updates)
+    unsigned long statusLastReceivedTime;
 
     /// @brief Message type determined by the first byte
     /// @param firstByte to from the message

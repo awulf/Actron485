@@ -97,6 +97,7 @@ class Actron485Climate : public climate::Climate, public Component {
         bool has_esp_auto_;
         bool has_ultima_;
         bool ultima_adjusts_master_setpoint_;
+        long last_command_sent_time_;
 
         /// Override control to change settings of the climate device.
         void control(const climate::ClimateCall &call) override;
