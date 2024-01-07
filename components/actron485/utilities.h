@@ -9,7 +9,7 @@ namespace actron485 {
 
 class Converter {
     public:
-        static const std::string FAN_NORMAL;
+        static const std::string FAN_STANDARD;
         static const std::string FAN_CONTINUOUS;
 
         static ClimateMode to_climate_mode(Actron485::OperatingMode mode);
