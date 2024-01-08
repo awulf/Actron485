@@ -87,7 +87,9 @@ class Actron485Climate : public climate::Climate, public Component {
         void dump_config() override;
         void update_status();
 
-    //     Trigger<> *get_idle_trigger() const;
+        void power_on();
+        void power_off();
+        void power_toggle();
 
     protected:
         InternalGPIOPin *we_pin_;
@@ -104,7 +106,6 @@ class Actron485Climate : public climate::Climate, public Component {
 
         /// Return the traits of this controller.
         climate::ClimateTraits traits() override;
-
 };
 
 }

@@ -78,6 +78,18 @@ void Actron485Climate::loop() {
     }
 }
 
+void Actron485Climate::power_on() { 
+    actronController.setSystemOn(true);
+}
+
+void Actron485Climate::power_off() {
+    actronController.setSystemOn(false);
+}
+
+void Actron485Climate::power_toggle() { 
+    actronController.setSystemOn(!actronController.getSystemOn());
+}
+
 template<typename T> void update_property(T &property, const T &value, bool &flag) {
     if (property != value) {
         property = value;

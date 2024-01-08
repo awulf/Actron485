@@ -1,6 +1,9 @@
+# Acknowledgement: Some parts of code in this component has been taken from the Midea Climate component and some others
+
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
+from esphome import automation
 from esphome.components import climate, sensor, uart
 
 from esphome.const import (
@@ -59,6 +62,32 @@ CONFIG_SCHEMA = cv.All(
     .extend(uart.UART_DEVICE_SCHEMA)
     .extend(cv.COMPONENT_SCHEMA)
 )
+
+# Actions
+PowerOnAction = actron485_ns.class_("PowerOnAction", automation.Action)
+PowerOffAction = actron485_ns.class_("PowerOffAction", automation.Action)
+PowerToggleAction = actron485_ns.class_("PowerToggleAction", automation.Action)
+
+ACTRON485_ACTION_BASE_SCHEMA = automation.maybe_simple_id(
+    {
+        cv.GenerateID(): cv.use_id(Actron485Climate),
+    }
+)
+
+# Power On action
+@automation.register_action(
+    "actron485.power_on", PowerOnAction, ACTRON485_ACTION_BASE_SCHEMA,
+)
+@automation.register_action(
+    "actron485.power_off", PowerOffAction, ACTRON485_ACTION_BASE_SCHEMA,
+)
+@automation.register_action(
+    "actron485.power_toggle", PowerToggleAction, ACTRON485_ACTION_BASE_SCHEMA,
+)
+async def power_action_to_code(config, action_id, template_arg, args):
+    paren = await cg.get_variable(config[CONF_ID])
+    var = cg.new_Pvariable(action_id, template_arg, paren)
+    return var
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])

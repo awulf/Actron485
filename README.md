@@ -4,12 +4,12 @@ PlatformIO and ESPHome library to control ActronAir Air conditioners directly vi
 **========== DISCLAIMER WARNING ==========**  
 Interfacing an ESP32 with an Actron air conditioner is out of specifications and not    
 condoned by the manufacturer and may void warranty and cause permanent damage.   
-Authors of these instructions and code as well as ActronAir are not responsible for   
+Author(s) of these instructions and code as well as ActronAir are not responsible for   
 any damage that may occur with the use of this project directly or indirectly.   
 **USE AT YOUR OWN RISK!!!**
 
 ## Introduction
-This all started as I was sick of the un-reliability of the [ACM-1](https://www.manualslib.com/manual/1654680/Actronair-Acm-1.html) wireless module and had purchased a [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) MODBUS controller to replace it. And had started writing code to ESP32 code interface with it (another project). But as [this intermediate server hack](https://blog.mikejmcguire.com/2018/12/19/actronconnect-and-home-assistant/) came out, the ACM-1 module had been rerunning reliably, thus motivation to continue on with the MODBUS controller had dropped. The only real befit gained from the MODBUS controller would be better statistics and ESP fan mode.
+This all started as I was sick of the un-reliability of the [ACM-1](https://www.manualslib.com/manual/1654680/Actronair-Acm-1.html) wireless module and had purchased a [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) MODBUS controller to replace it. And had started writing code to ESP32 code interface with it (another project). But as [this intermediate server hack](https://blog.mikejmcguire.com/2018/12/19/actronconnect-and-home-assistant/) came out, the ACM-1 module had been running reliably, thus motivation to continue on with the MODBUS controller had dropped. The only real befit gained from the MODBUS controller would be better statistics, continuous fan and ESP Auto fan mode.
 
 I upgraded my system to Ultima, where individual zones could be temperature controlled. My biggest issues was that the temperatures could not be set remotely per zone. Spotting the RS485 chip on the LM-ZC-2W, I thought surely there be a way to send something down to change the temperature. With an oscilloscope, logic analyser, an RS485 USB serial adaptor, and a lot of head banging I was able to decode the communications between these little wall controllers and the main unit. In the process discovered more than I set out to. So here we are with a general purpose RS485 controller for a range of ActronAir conditioners.
 
