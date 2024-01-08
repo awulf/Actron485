@@ -1,5 +1,5 @@
 # Actron485
-PlatformIO library to control ActronAir Air conditioners directly via the RS485 bus
+PlatformIO and ESPHome library to control ActronAir Air conditioners directly via the RS-485 bus
 
 **========== DISCLAIMER WARNING ==========**  
 Interfacing an ESP32 with an Actron air conditioner is out of specifications and not    
@@ -62,8 +62,60 @@ If running out of pins on the ESP32, TX and RX can be joined and be configured t
 
 ![Example wiring photo](./assets/wiring-example-remote.jpg "Example wiring diagram")
 
+## ESPHome
+Checkout this git repo in a place where your ESPHome instance can access. In the example YAML below it's in `/config/`.
+
+ESPHome will create a climate entity for the main controller, with a fan control for each zone.    
+ULTIMA systems (when enabled in the config) will also have a climate control per zone.
+
+### Example YAML
+
+```
+external_components:
+  - source:
+      type: local
+      path: /config/actron485/components
+
+esphome:
+  name: ac-remote
+  friendly_name: ac-remote
+  platformio_options:
+    lib_extra_dirs: /config/
+  libraries:
+    Actron485
+  
+# UART settings for Actron485 (required)
+uart:
+  rx_pin: GPIO27 
+  tx_pin: GPIO26 
+  baud_rate: 4800
+
+climate:
+  - platform: actron485
+    name: "Actron Climate Controller"
+    write_enable_pin: GPIO25 # Write Enable pin for the RS-485 communication
+    esp_fan_available: true # For Systems with ESP Auto mode, adds Auto fan mode.
+    ultima: # For ULTIMA Systems only, adds climate controls per zone.
+      available: true
+      adjust_master_target: true # Adjust master target temperature to allow the targeted zone temperature.
+    logging_mode: CHANGE
+    zones:
+      - number: 1
+        name: Living
+      - number: 2
+        name: Theatre
+      - number: 3
+        name: Study
+      - number: 4
+        name: Master Bedroom
+      - number: 5
+        name: Bedroom 2
+      - number: 6
+        name: Bedroom 3
+```
+
 ## Notes
-* One command per cycle can be sent (~1s per cycle). Different commands are stored and sent out one by one at the end of a cycle. E.g. setting 8 zone temperatures, takes 8 seconds to complete.
+* One command per cycle can be sent (~1s per cycle). Different commands are stored and sent out one by one at the end of a cycle. E.g. setting 8 individual zone temperatures, takes 8 seconds to complete.
 * If a command is scheduled to be sent out, but in the mean time another command of the same type is set, the original command will be ignored. E.g. `turn system off` command is scheduled, but before it has time to be sent a `turn system on` command is scheduled, it will replace the off command.
 * If another user is pressing buttons on a wall controller while also a message is being sent via this controller, a race condition could occur and one may override the other. E.g. Wall zone 1 is turned on, at the same time zone 2 is turned on in this controller. Zone 1 or 2 may turn off again.
 
