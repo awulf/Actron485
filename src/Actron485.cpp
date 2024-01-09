@@ -505,29 +505,64 @@ namespace Actron485 {
             return;
         }
 
-        if (stateMessage.operatingMode == OperatingMode::Off && on) {
-            // If all off, pressing on turns on fan mode
-            nextOperatingModeCommand.mode = OperatingMode::FanOnly;
-        } else if (stateMessage.operatingMode == OperatingMode::FanOnly && on == false) {
-            // If fan mode, turning off, sets to fully off
-            nextOperatingModeCommand.mode = OperatingMode::Off;
+        OperatingMode currentMode = getOperatingMode();
+        
+        if (on) {
+            switch (currentMode) {
+                case OperatingMode::Off:
+                    nextOperatingModeCommand.mode = OperatingMode::FanOnly;
+                    sendOperatingModeCommand = true;
+                    break;
+                case OperatingMode::OffAuto:
+                    nextOperatingModeCommand.mode = OperatingMode::Auto;
+                    sendOperatingModeCommand = true;
+                    break;
+                case OperatingMode::OffHeat:
+                    nextOperatingModeCommand.mode = OperatingMode::Heat;
+                    sendOperatingModeCommand = true;
+                    break;
+                case OperatingMode::OffCool:
+                    nextOperatingModeCommand.mode = OperatingMode::Cool;
+                    sendOperatingModeCommand = true;
+                    break;
+            }
         } else {
-            // Set the on/off bit
-            nextOperatingModeCommand.mode = OperatingMode(((uint8_t) stateMessage.operatingMode) & (on ? 0b11111111 : 0b11110111));
+            switch (currentMode) {
+                case OperatingMode::FanOnly:
+                    nextOperatingModeCommand.mode = OperatingMode::Off;
+                    sendOperatingModeCommand = true;
+                    break;
+                case OperatingMode::Auto:
+                    nextOperatingModeCommand.mode = OperatingMode::OffAuto;
+                    sendOperatingModeCommand = true;
+                    break;
+                case OperatingMode::Heat:
+                    nextOperatingModeCommand.mode = OperatingMode::OffHeat;
+                    sendOperatingModeCommand = true;
+                    break;
+                case OperatingMode::Cool:
+                    nextOperatingModeCommand.mode = OperatingMode::OffCool;
+                    sendOperatingModeCommand = true;
+                    break;
+            }
         }
-        sendOperatingModeCommand = true;
     }
 
     bool Controller::getSystemOn() {
-        if (stateMessage.initialised == true) {
-            // Read from State Message
-            return stateMessage.operatingMode != OperatingMode::Off;
-        } else if (stateMessage2.initialised == true) {
-            // Read from State 2 Message
-            return stateMessage2.operatingMode != OperatingMode::Off;
-        }
+        OperatingMode currentMode = getOperatingMode();
 
-        return false;
+        switch (currentMode) {
+            case OperatingMode::FanOnly:
+                return true;
+            case OperatingMode::Auto:
+                return true;
+            case OperatingMode::Heat:
+                return true;
+            case OperatingMode::Cool:
+                return true;
+            default:
+                return false;
+        }
     }
 
     void Controller::setFanSpeed(FanMode fanSpeed) {
@@ -634,7 +669,7 @@ namespace Actron485 {
             // Read from State 2 Message
             return stateMessage2.operatingMode;
         }
-        return OperatingMode::Auto;
+        return OperatingMode::Off;
     }
 
     void Controller::setMasterSetpoint(double temperature) {

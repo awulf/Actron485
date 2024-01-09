@@ -498,21 +498,16 @@ void StateMessage::print() {
     printOut->print("Operating Mode: ");
     switch (operatingMode) {
         case OperatingMode::Off:
-            printOut->print("Off");
-            switch (lastOperatingMode) {
-                case OperatingMode::Auto:
-                    printOut->print("-Auto");
-                    break;
-                case OperatingMode::Cool:
-                    printOut->print("-Cool");
-                    break;
-                case OperatingMode::Heat:
-                    printOut->print("-Heat");
-                    break;
-                default:
-                    printOut->print("-Fan Only");
-                    break;
-            }
+            printOut->print("Off-Off");
+            break;
+        case OperatingMode::OffAuto:
+            printOut->print("Off-Auto");
+            break;
+        case OperatingMode::OffCool:
+            printOut->print("Off-Cool");
+            break;
+        case OperatingMode::OffHeat:
+            printOut->print("Off-Heat");
             break;
         case OperatingMode::FanOnly:
             printOut->print("Fan Only");
@@ -622,10 +617,7 @@ void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
     fanActive = (data[15] & 0b1) == 0; // 0 == Active, 1 == Idle
 
     uint8_t operatingModeRaw = (data[13] & 0b00011111);
-    // If the system is off show operating mode as such
-    operatingMode = OperatingMode(((operatingModeRaw & 0b11000) == 0) ? 0 : operatingModeRaw);
-    // And note what it has been in the past
-    lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
+    operatingMode = OperatingMode(operatingModeRaw);
 
     // Compressor mode
     uint8_t compressorModeRaw = (data[13] & 0b01100000) >> 5;
@@ -657,21 +649,16 @@ void StateMessage2::print() {
     printOut->print("Operating Mode: ");
     switch (operatingMode) {
         case OperatingMode::Off:
-            printOut->print("Off");
-            switch (lastOperatingMode) {
-                case OperatingMode::Auto:
-                    printOut->print("-Auto");
-                    break;
-                case OperatingMode::Cool:
-                    printOut->print("-Cool");
-                    break;
-                case OperatingMode::Heat:
-                    printOut->print("-Heat");
-                    break;
-                default:
-                    printOut->print("-Fan Only");
-                    break;
-            }
+            printOut->print("Off-Off");
+            break;
+        case OperatingMode::OffAuto:
+            printOut->print("Off-Auto");
+            break;
+        case OperatingMode::OffCool:
+            printOut->print("Off-Cool");
+            break;
+        case OperatingMode::OffHeat:
+            printOut->print("Off-Heat");
             break;
         case OperatingMode::FanOnly:
             printOut->print("Fan Only");
@@ -779,10 +766,7 @@ void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
     fanActive = (data[5] & 0b1) == 0; // 0 == Active, 1 == Idle
 
     uint8_t operatingModeRaw = (data[3] & 0b00011111);
-    // If the system is off show operating mode as such
-    operatingMode = OperatingMode(((operatingModeRaw & 0b11000) == 0) ? 0 : operatingModeRaw);
-    // And note what it has been in the past
-    lastOperatingMode = OperatingMode((operatingModeRaw & 0b111) | 0b10000);
+    operatingMode = OperatingMode(operatingModeRaw);
 
     // Compressor mode
     uint8_t compressorModeRaw = (data[3] & 0b01100000) >> 5;

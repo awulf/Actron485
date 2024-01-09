@@ -311,10 +311,8 @@ struct StateMessage {
     /// @brief System setpoint temperature, which also limits individual zone temperature set points
     double setpoint;
 
-    /// @brief Mode the system is operating in
+    /// @brief Mode the system is operating in, includes various off states
     OperatingMode operatingMode;
-    /// @brief If system is off this is the last mode it operated in, thus can be used to turn the system back on to last used state
-    OperatingMode lastOperatingMode;
     /// @brief if system is actively cooling/heating, or idle
     CompressorMode compressorMode;
 
@@ -349,10 +347,8 @@ struct StateMessage2 {
     /// @brief System setpoint temperature, which also limits individual zone temperature set points
     double setpoint;
 
-    /// @brief Mode the system is operating in
+    /// @brief Mode the system is operating in, includes various off states
     OperatingMode operatingMode;
-    /// @brief If system is off this is the last mode it operated in, thus can be used to turn the system back on to last used state
-    OperatingMode lastOperatingMode;
     /// @brief if system is actively cooling/heating, or idle
     CompressorMode compressorMode;
 
