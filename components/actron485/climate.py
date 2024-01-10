@@ -4,16 +4,18 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
 from esphome import automation
-from esphome.components import climate, sensor, uart
+from esphome.components import climate, sensor, uart, fan
 
 from esphome.const import (
     CONF_ID,
     CONF_READ_PIN,
     CONF_WRITE_PIN,
+    CONF_DISABLED_BY_DEFAULT,
+    CONF_RESTORE_MODE
 )
 
 CONF_WRITE_ENABLE_PIN = "write_enable_pin"
-CONF_ZONE_NAMES = "zones"
+CONF_ZONES = "zones"
 CONF_ESP_FAN_AVAILABLE = "esp_fan_available"
 CONF_ULTIMA = "ultima"
 CONF_ULTIMA_AVAILABLE = "available"
@@ -30,28 +32,34 @@ ALLOWED_LOGGING_MODES = {
     "ALL": 3,
 }
 
-zone_entry_parameter = {
-    cv.Required(CONF_ZONE_NUMBER): cv.int_,
-    cv.Required(CONF_ZONE_NAME): cv.string,
-}
-
 ultima_config_parameter = {
     cv.Optional(CONF_ULTIMA_AVAILABLE, default=True): cv.boolean,
     cv.Optional(CONF_ULTIMA_ZONES_ADJUSTS_MASTER, default=False): cv.boolean,
 }
 
 CODEOWNERS = ["@awulf"]
-DEPENDENCIES = ["climate", "uart"]
+DEPENDENCIES = ["climate", "uart", "fan"]
 
 actron485_ns = cg.esphome_ns.namespace("actron485")
 Actron485Climate = actron485_ns.class_("Actron485Climate", climate.Climate, cg.Component)
+Actron485ZoneFan = actron485_ns.class_("Actron485ZoneFan", fan.Fan, cg.Component)
+
+zone_entry_parameter = cv.All(
+    fan.FAN_SCHEMA.extend(
+        {
+            cv.GenerateID(): cv.declare_id(Actron485ZoneFan),
+            cv.Required(CONF_ZONE_NUMBER): cv.int_,
+            cv.Required(CONF_ZONE_NAME): cv.string,
+        }
+    )
+)
 
 CONFIG_SCHEMA = cv.All(
     climate.CLIMATE_SCHEMA.extend(
         {
             cv.GenerateID(): cv.declare_id(Actron485Climate),
             cv.Required(CONF_WRITE_ENABLE_PIN): pins.gpio_output_pin_schema,
-            cv.Required(CONF_ZONE_NAMES): cv.All(
+            cv.Required(CONF_ZONES): cv.All(
                 cv.ensure_list(zone_entry_parameter), cv.Length(min=1, max=8)
             ),
             cv.Optional(CONF_LOGGING_MODE, default="STATUS"): cv.enum(ALLOWED_LOGGING_MODES, upper=True),  
@@ -109,3 +117,14 @@ async def to_code(config):
 
     logging_mode = ALLOWED_LOGGING_MODES[config[CONF_LOGGING_MODE]]
     cg.add(var.set_logging_mode(logging_mode))
+
+    if CONF_ZONES in config:
+        zones = config[CONF_ZONES]
+        for zone in zones:
+            name = zone[CONF_ZONE_NAME]
+            number = zone[CONF_ZONE_NUMBER]
+            
+            # paren = await cg.get_variable(config[CONF_ID])
+            
+            zoneFan = await fan.create_fan_state(zone)
+            cg.add(var.add_zone(number, zoneFan))

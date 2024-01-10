@@ -1,16 +1,16 @@
 #include "actron485_climate.h"
 #include "esphome/core/log.h"
 #include "utilities.h"
+#include "zone_fan.h"
+#include "zone_climate.h"
 
 namespace esphome {
 namespace actron485 {
 
-static const char *const TAG = "actron485.climate";
-
 Actron485Climate::Actron485Climate() = default;
 
 // Global Actron485 controller
-static Actron485::Controller actronController = Actron485::Controller();
+static Actron485::Controller actron_controller = Actron485::Controller();
 static long counter = 0;
 
 size_t LogStream::write(uint8_t data) {
@@ -45,32 +45,35 @@ void LogStream::flush() {
     ESP_LOGD(TAG, "FLUSH");
 }
 
+void Actron485ZoneFan::setup() {
+}
+
 void Actron485Climate::setup() {
     // Setup controller if we have the pins and the controller hasn't already been setup
     if (we_pin_ != NULL) {
         int we_pin = we_pin_->get_pin();
         we_pin_->pin_mode(gpio::FLAG_OUTPUT);
 
-        actronController.configure(stream_, 25);
+        actron_controller.configure(stream_, 25);
         logStream_ = LogStream();
         if (logging_mode_ > 0) {
-            actronController.configureLogging(&logStream_);
+            actron_controller.configureLogging(&logStream_);
             switch (logging_mode_) {
                 case 1:
-                    actronController.printOutMode = Actron485::PrintOutMode::StatusOnly;
+                    actron_controller.printOutMode = Actron485::PrintOutMode::StatusOnly;
                     break;
                 case 2:
-                    actronController.printOutMode = Actron485::PrintOutMode::ChangedMessages;
+                    actron_controller.printOutMode = Actron485::PrintOutMode::ChangedMessages;
                     break;
                 case 3:
-                    actronController.printOutMode = Actron485::PrintOutMode::AllMessages;
+                    actron_controller.printOutMode = Actron485::PrintOutMode::AllMessages;
             }
         }
     }
 }
 
 void Actron485Climate::loop() {
-    actronController.loop();
+    actron_controller.loop();
     
     if (millis()-counter > 1000) {
         counter = millis();
@@ -79,76 +82,87 @@ void Actron485Climate::loop() {
 }
 
 void Actron485Climate::power_on() { 
-    actronController.setSystemOn(true);
+    actron_controller.setSystemOn(true);
 }
 
 void Actron485Climate::power_off() {
-    actronController.setSystemOn(false);
+    actron_controller.setSystemOn(false);
 }
 
 void Actron485Climate::power_toggle() { 
-    actronController.setSystemOn(!actronController.getSystemOn());
+    actron_controller.setSystemOn(!actron_controller.getSystemOn());
 }
 
-template<typename T> void update_property(T &property, const T &value, bool &flag) {
-    if (property != value) {
-        property = value;
-        flag = true;
+void Actron485Climate::add_zone(int number, Actron485ZoneFan *fan) {
+    if (number < 1 && number > 8) {
+        ESP_LOGE(TAG, "Zone out of bounds %d, 1-8 accepted", number);
+        return;
     }
+    fan->set_controller(&actron_controller);
+    fan->set_zone_number(number);
+    zones_[number-1] = fan;
 }
 
 void Actron485Climate::update_status() {
-    if (last_command_sent_time_ < actronController.statusLastReceivedTime) {
+    if (last_command_sent_time_ < actron_controller.statusLastReceivedTime) {
         // Don't check until we received a new status message after sending a command
         // to debounce status changes 
         return;
     }
 
     bool has_changed = false;
-    // Target/Setpoint Tempeature
-    update_property(this->target_temperature, (float)actronController.getMasterSetpoint(), has_changed);
+
+    // Target/Setpoint Temperature
+    update_property(this->target_temperature, (float)actron_controller.getMasterSetpoint(), has_changed);
     // Current Temperature
-    update_property(this->current_temperature, (float)actronController.getMasterCurrentTemperature(), has_changed);
+    update_property(this->current_temperature, (float)actron_controller.getMasterCurrentTemperature(), has_changed);
 
     // Continuous Fan Mode
-    bool continuous_mode = actronController.getContinuousFanMode();
+    bool continuous_mode = actron_controller.getContinuousFanMode();
     has_changed = has_changed || (this->set_custom_preset_(Converter::to_preset(continuous_mode)));
 
     // Fan Speed Mode
-    Actron485::FanMode fan_mode = actronController.getFanSpeed();
+    Actron485::FanMode fan_mode = actron_controller.getFanSpeed();
     has_changed = has_changed || (this->set_fan_mode_(Converter::to_fan_mode(fan_mode)));
 
     // Operating Mode
-    auto mode = actronController.getSystemOn() ? Converter::to_climate_mode(actronController.getOperatingMode()) : ClimateMode::CLIMATE_MODE_OFF;
+    auto mode = actron_controller.getSystemOn() ? Converter::to_climate_mode(actron_controller.getOperatingMode()) : ClimateMode::CLIMATE_MODE_OFF;
     update_property(this->mode, mode, has_changed);
 
     // Action Mode
-    auto action = actronController.getSystemOn() ? Converter::to_climate_action(actronController.getCompressorMode(), actronController.getOperatingMode()) : ClimateAction::CLIMATE_ACTION_OFF;
+    auto action = actron_controller.getSystemOn() ? Converter::to_climate_action(actron_controller.getCompressorMode(), actron_controller.getOperatingMode()) : ClimateAction::CLIMATE_ACTION_OFF;
     update_property(this->action, action, has_changed);
 
     if (has_changed) {
         ESP_LOGD(TAG, "Has Changed, Publishing State");
         this->publish_state();
     }
+
+    // Zone updates
+    for (int z=0; z<6; z++) {
+        if (zones_[z]) {
+            zones_[z]->update();
+        }
+    }
 }
 
 void Actron485Climate::control(const climate::ClimateCall &call) {
     if (call.get_mode().has_value()) {
         Actron485::OperatingMode operating_mode = Converter::to_actron_operating_mode(call.get_mode().value());
-        actronController.setOperatingMode(operating_mode);
+        actron_controller.setOperatingMode(operating_mode);
     }
     if (call.get_target_temperature().has_value()) {
-        actronController.setMasterSetpoint(call.get_target_temperature().value());
+        actron_controller.setMasterSetpoint(call.get_target_temperature().value());
     }
     if (call.get_custom_preset().has_value()) {
         bool continuous_mode = Converter::to_continuous_mode(call.get_custom_preset().value());
-        if (actronController.getContinuousFanMode() != continuous_mode) {
-            actronController.setContinuousFanMode(continuous_mode);
+        if (actron_controller.getContinuousFanMode() != continuous_mode) {
+            actron_controller.setContinuousFanMode(continuous_mode);
         }
     }
     if (call.get_fan_mode().has_value()) {
         Actron485::FanMode fan_mode = Converter::to_actron_fan_mode(call.get_fan_mode().value());
-        actronController.setFanSpeed(fan_mode);
+        actron_controller.setFanSpeed(fan_mode);
     }
 }
 
@@ -178,13 +192,12 @@ climate::ClimateTraits Actron485Climate::traits() {
         traits.add_supported_fan_mode(ClimateFanMode::CLIMATE_FAN_AUTO);
     }
 
-//   traits.set_supports_action(true);
     return traits;
 }
 
 void Actron485Climate::dump_config() {
   ESP_LOGCONFIG(TAG, "Actron485 Status:");
-  ESP_LOGCONFIG(TAG, "  Receiving Data: %s", actronController.receivingData() ? "YES" : "NO");
+  ESP_LOGCONFIG(TAG, "  Receiving Data: %s", actron_controller.receivingData() ? "YES" : "NO");
   this->dump_traits_(TAG);
 }
 

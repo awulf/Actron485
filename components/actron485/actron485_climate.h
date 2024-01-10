@@ -5,11 +5,15 @@
 #include "esphome/components/climate/climate.h"
 #include "esphome/core/defines.h"
 #include "esphome/components/uart/uart.h"
+#include "esphome/components/fan/fan.h"
 #include "Actron485.h"
+#include "zone_fan.h"
+#include "zone_climate.h"
 
 namespace esphome {
 namespace actron485 {
 
+using fan::Fan;
 using climate::ClimateCall;
 using climate::ClimatePreset;
 using climate::ClimateTraits;
@@ -84,6 +88,8 @@ class Actron485Climate : public climate::Climate, public Component {
             ultima_adjusts_master_setpoint_ = adjusts_master_target; 
         }
 
+        void add_zone(int number, Actron485ZoneFan *fan);
+
         void dump_config() override;
         void update_status();
 
@@ -100,6 +106,7 @@ class Actron485Climate : public climate::Climate, public Component {
         bool has_ultima_;
         bool ultima_adjusts_master_setpoint_;
         long last_command_sent_time_;
+        Actron485ZoneFan *zones_[8];
 
         /// Override control to change settings of the climate device.
         void control(const climate::ClimateCall &call) override;

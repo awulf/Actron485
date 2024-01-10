@@ -7,6 +7,15 @@
 namespace esphome {
 namespace actron485 {
 
+static const char *const TAG = "actron485.climate";
+
+template<typename T> void update_property(T &property, const T &value, bool &flag) {
+    if (property != value) {
+        property = value;
+        flag = true;
+    }
+}
+
 class Converter {
     public:
         static const std::string FAN_STANDARD;
