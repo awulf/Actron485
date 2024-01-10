@@ -733,12 +733,12 @@ namespace Actron485 {
         }
 
         for (int i=0; i<8; i++) {
-            nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : getZoneOnState(i+1));
+            nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : getZoneOn(i+1));
         }
         sendZoneStateCommand = true;
     }
 
-    bool Controller::getZoneOnState(uint8_t zone) {
+    bool Controller::getZoneOn(uint8_t zone) {
         if (stateMessage.initialised == true) {
             // Read from State Message
             return stateMessage.zoneOn[zindex(zone)];

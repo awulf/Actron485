@@ -40,7 +40,7 @@ void loop() {
     //   Serial.print("°C, Reading ");
     //   Serial.print(actronController.getZoneCurrentTemperature(i));
     //   Serial.print("°C, State ");
-    //   Serial.print(actronController.getZoneOnState(i) ? "ON" : "OFF");
+    //   Serial.print(actronController.getZoneOn(i) ? "ON" : "OFF");
     //   Serial.println();
     // }
     Serial.println();

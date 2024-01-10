@@ -11,7 +11,7 @@ void Actron485ZoneFan::update() {
     bool has_changed = false;
 
     // Action Mode
-    auto zone_on = actron_controller_->getZoneOnState(number_);
+    auto zone_on = actron_controller_->getZoneOn(number_);
     update_property(this->state, zone_on, has_changed);
 
     if (has_changed) {

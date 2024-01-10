@@ -269,7 +269,7 @@ public:
     /// @brief get zone on/off state
     /// @param zone to query
     /// @returns true if on, false otherwise
-    bool getZoneOnState(uint8_t zone);
+    bool getZoneOn(uint8_t zone);
 
     /// @brief adjust the zones setpoint to the specified temperature for Ultima systems
     /// *** This only works for zones controlled by this controller module ***
