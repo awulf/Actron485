@@ -4,7 +4,6 @@
 #include "esphome/core/automation.h"
 #include "esphome/components/climate/climate.h"
 #include "esphome/core/defines.h"
-#include "esphome/components/uart/uart.h"
 #include "esphome/components/fan/fan.h"
 #include "Actron485.h"
 

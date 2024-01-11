@@ -103,6 +103,17 @@ void Actron485Climate::add_zone(int number, Actron485ZoneFan *fan) {
     zones_[number-1] = fan;
 }
 
+void Actron485Climate::add_ultima_zone(int number, Actron485ZoneClimate *climate) {
+    if (number < 1 && number > 8) {
+        ESP_LOGE(TAG, "Zone out of bounds %d, 1-8 accepted", number);
+        return;
+    }
+    climate->set_controller(&actron_controller);
+    climate->set_zone_number(number);
+    climate->set_ultima_adjusts_master_setpoint(ultima_adjusts_master_setpoint_);
+    zone_climates_[number-1] = climate;
+}
+
 void Actron485Climate::update_status() {
     if (last_command_sent_time_ < actron_controller.statusLastReceivedTime) {
         // Don't check until we received a new status message after sending a command
@@ -139,9 +150,12 @@ void Actron485Climate::update_status() {
     }
 
     // Zone updates
-    for (int z=0; z<6; z++) {
+    for (int z=0; z<8; z++) {
         if (zones_[z]) {
             zones_[z]->update();
+        }
+        if (zone_climates_[z]) {
+            zone_climates_[z]->update();
         }
     }
 }

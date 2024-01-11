@@ -43,6 +43,7 @@ DEPENDENCIES = ["climate", "uart", "fan"]
 actron485_ns = cg.esphome_ns.namespace("actron485")
 Actron485Climate = actron485_ns.class_("Actron485Climate", climate.Climate, cg.Component)
 Actron485ZoneFan = actron485_ns.class_("Actron485ZoneFan", fan.Fan, cg.Component)
+Actron485ZoneClimate = actron485_ns.class_("Actron485ZoneClimate", climate.Climate, cg.Component)
 
 zone_entry_parameter = cv.All(
     fan.FAN_SCHEMA.extend(
@@ -124,7 +125,12 @@ async def to_code(config):
             name = zone[CONF_ZONE_NAME]
             number = zone[CONF_ZONE_NUMBER]
             
-            # paren = await cg.get_variable(config[CONF_ID])
-            
             zoneFan = await fan.create_fan_state(zone)
             cg.add(var.add_zone(number, zoneFan))
+
+            # if CONF_ULTIMA in config:
+            #     paren = await cg.get_variable(config[CONF_ID])
+            #     var = cg.new_Pvariable(config[CONF_ID], template_arg, paren)
+            #     zoneClimate = await climate.register_climate(var, zone)
+            #     cg.add(var.add_ultima_zone(number, zonClimate))
+
