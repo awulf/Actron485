@@ -84,6 +84,9 @@ esphome:
   libraries:
     Actron485
   
+# Adds fan component per zone (required)
+fan:
+
 # UART settings for Actron485 (required)
 uart:
   rx_pin: GPIO27 
@@ -122,10 +125,10 @@ climate:
 ## Todo
 * Testing! Code is new and largely untested 
 * Decode more data. Should be able retrieve all statistics that the [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) module can read 
-* On ULTIMA systems the AO... message comes every cycle with all up to date statistics and control modes. On other systems it appears 02... message is the equivalent, but only occurs about every 16 seconds. So there will be a lag of UI updates for these systems for that amount of time. 01... messages may also contain most data to augment 02... for improved responsiveness. Alternatively there there maybe other packets to be seen,
+* On my ULTIMA system the `AO...` message comes every cycle with all up to date statistics and control modes. On other systems it appears to lack this and `02...` message needs to be used, but only occurs about every 16 seconds. So there will be a lag of status updates for these systems for that amount of time. `01...` messages may also contain most data to augment with `02...` for improved responsiveness. Alternatively there there maybe other packets to be seen. Create an issue for your particular setup, post logs in `ALL` mode and different scenarios e.g. heat, cool, fan speeds, changing zone states.
 
 Open issues or merge requests on any bugs found and improvements.
 
 ### Bug Reports
 
-Have `logging_mode: ALL` (for ESPHome configuration) or `printOutMode = Actron485::PrintOutMode::All;` (for PlaformIO code) and include logs during the period the error occurs. Especially if it's a data being interpreted issue.
+Have `logging_mode: ALL` (for ESPHome configuration) or `printOutMode = Actron485::PrintOutMode::AllMessages;` (for PlaformIO code) and include logs during the period the error occurs. Especially if it's a data being interpreted issue.
