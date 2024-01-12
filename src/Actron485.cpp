@@ -767,7 +767,7 @@ namespace Actron485 {
                 }
                 // If the difference is not 0 adjust
                 if (diff != 0) {
-                    double newTemperature = getMasterSetpoint() + diff;
+                    double newTemperature = getMasterSetpoint() - diff;
                     setMasterSetpoint(newTemperature);
                 }
             }
@@ -799,7 +799,7 @@ namespace Actron485 {
             }
             // If the difference is not 0 adjust
             if (diff != 0) {
-                double newTemperature = getMasterSetpoint() + diff;
+                double newTemperature = getMasterSetpoint() - diff;
                 setMasterSetpoint(newTemperature);
             }
         }
