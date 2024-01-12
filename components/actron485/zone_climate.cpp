@@ -56,7 +56,7 @@ climate::ClimateTraits Actron485ZoneClimate::traits() {
 }
 
 void Actron485ZoneClimate::dump_config() { 
-    
+    this->dump_traits_(TAG);
 }
 
 }

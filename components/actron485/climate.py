@@ -25,6 +25,9 @@ CONF_LOGGING_MODE = "logging_mode"
 CONF_ZONE_NUMBER = "number"
 CONF_ZONE_NAME = "name"
 
+CONF_ZONE_FAN_ID = "zone_fan_id"
+CONF_ZONE_CLIMATE_ID = "zone_climate_id"
+
 ALLOWED_LOGGING_MODES = {
     "NONE": 0,
     "STATUS": 1,
@@ -45,14 +48,17 @@ Actron485Climate = actron485_ns.class_("Actron485Climate", climate.Climate, cg.C
 Actron485ZoneFan = actron485_ns.class_("Actron485ZoneFan", fan.Fan, cg.Component)
 Actron485ZoneClimate = actron485_ns.class_("Actron485ZoneClimate", climate.Climate, cg.Component)
 
-zone_entry_parameter = cv.All(
-    fan.FAN_SCHEMA.extend(
+ZONE_ENTRY_PARAMETER = cv.All(
+    cv.COMPONENT_SCHEMA.extend(
         {
-            cv.GenerateID(): cv.declare_id(Actron485ZoneFan),
+            cv.GenerateID(CONF_ZONE_FAN_ID): cv.declare_id(Actron485ZoneFan),
+            cv.GenerateID(CONF_ZONE_CLIMATE_ID): cv.declare_id(Actron485ZoneClimate),
             cv.Required(CONF_ZONE_NUMBER): cv.int_,
             cv.Required(CONF_ZONE_NAME): cv.string,
         }
     )
+    # .extend(fan.FAN_SCHEMA)
+    # .extend(climate.CLIMATE_SCHEMA)
 )
 
 CONFIG_SCHEMA = cv.All(
@@ -61,7 +67,7 @@ CONFIG_SCHEMA = cv.All(
             cv.GenerateID(): cv.declare_id(Actron485Climate),
             cv.Required(CONF_WRITE_ENABLE_PIN): pins.gpio_output_pin_schema,
             cv.Required(CONF_ZONES): cv.All(
-                cv.ensure_list(zone_entry_parameter), cv.Length(min=1, max=8)
+                cv.ensure_list(ZONE_ENTRY_PARAMETER), cv.Length(min=1, max=8)
             ),
             cv.Optional(CONF_LOGGING_MODE, default="STATUS"): cv.enum(ALLOWED_LOGGING_MODES, upper=True),  
             cv.Optional(CONF_ESP_FAN_AVAILABLE, default=False): cv.boolean,
@@ -110,6 +116,7 @@ async def to_code(config):
     has_esp = config[CONF_ESP_FAN_AVAILABLE]
     cg.add(var.set_has_esp(has_esp))
 
+    has_ultima = False
     if CONF_ULTIMA in config:
         ultima_config = config[CONF_ULTIMA]
         has_ultima = ultima_config[CONF_ULTIMA_AVAILABLE]
@@ -125,12 +132,35 @@ async def to_code(config):
             name = zone[CONF_ZONE_NAME]
             number = zone[CONF_ZONE_NUMBER]
             
-            zoneFan = await fan.create_fan_state(zone)
+            # This below is messy, surely there's a better way
+            # to make two types of components from a single list
+
+            zone_f = zone.copy()
+            zone_f.pop(CONF_ZONE_NUMBER)
+            zone_f.pop(CONF_ZONE_CLIMATE_ID)
+            fan_id = zone_f.pop(CONF_ZONE_FAN_ID)
+            zone_f[CONF_ID] = fan_id
+
+            fanConfig = fan.FAN_SCHEMA(zone_f)
+            fanConfig[CONF_ID] = fan_id
+            
+            zoneFan = cg.new_Pvariable(fanConfig[CONF_ID])
+            await fan.register_fan(zoneFan, fanConfig)
+            await cg.register_component(zoneFan, fanConfig)
             cg.add(var.add_zone(number, zoneFan))
 
-            # if CONF_ULTIMA in config:
-            #     paren = await cg.get_variable(config[CONF_ID])
-            #     var = cg.new_Pvariable(config[CONF_ID], template_arg, paren)
-            #     zoneClimate = await climate.register_climate(var, zone)
-            #     cg.add(var.add_ultima_zone(number, zonClimate))
+            if has_ultima:
+                zone_c = zone.copy()
+                zone_c.pop(CONF_ZONE_NUMBER)
+                climate_id = zone_c.pop(CONF_ZONE_CLIMATE_ID)
+                zone_c.pop(CONF_ZONE_FAN_ID)
+                zone_c[CONF_ID] = climate_id
+
+                climateConfig = climate.CLIMATE_SCHEMA(zone_c)
+                climateConfig[CONF_ID] = climate_id
+
+                zoneClimate = cg.new_Pvariable(climateConfig[CONF_ID])
+                await climate.register_climate(zoneClimate, climateConfig)
+                await cg.register_component(zoneClimate, climateConfig)
+                cg.add(var.add_ultima_zone(number, zoneClimate))
 

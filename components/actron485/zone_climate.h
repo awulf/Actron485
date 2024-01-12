@@ -13,7 +13,7 @@ namespace actron485 {
 class Actron485ZoneClimate : public climate::Climate, public Component {
     public:
         Actron485ZoneClimate();
-        void setup() override;
+        void setup() override { }
 
         void update();
 
