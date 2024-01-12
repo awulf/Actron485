@@ -16,6 +16,7 @@ I upgraded my system to Ultima, where individual zones could be temperature cont
 ## Requirements
 ### Hardware
 * An ActronAir conditioner compatible with ACM-1, ACM-2 or ICAMIB-MOD control modules
+   > BMS Modbus is available for ESP Plus, ESP Ultima, ESP Platinum Plus, ESP Platinum Ultima and selected Classic models (except SRA230 and SRA260) manufactured after October 2013.
 * An ESP32 with a power supply
 * An RS485 module (ideally a direct MAX485 with RO/RE/DE/DI, not serial converter)
 * Wire to connect ESP32 and RS485 together.
@@ -48,7 +49,7 @@ See examples folder for example usage. Header files such `Actron485.h` and `Actr
 
 **WARNING** Turn off the power from the main switch at the outdoor unit before removing covers and touching any wiring as the 240V mains power is exposed. Switching off the power will prevent electrical shock and reduce the risk of damaging your air conditioner.
 
-Wiring up the A/B from the MAX485 TTL UART to the Air conditioner. There wil be multiple places to connect the wires to on the AC side.
+Wiring up the A/B from the MAX485 TTL UART to the Air conditioner. There will be multiple places to connect the wires to on the AC side.
 1. Indoor board DATA header e.g. pins 3 (A) 4 (B) shown in the photo
 2. Indoor board to outdoor connection A/B
 3. Outdoor board to indoor Connection A/B
@@ -123,8 +124,8 @@ climate:
 * If another user is pressing buttons on a wall controller while also a message is being sent via this controller, a race condition could occur and one may override the other. E.g. Wall zone 1 is turned on, at the same time zone 2 is turned on in this controller. Zone 1 or 2 may turn off again.
 
 ## Todo
-* Testing! Code is new and largely untested 
-* Decode more data. Should be able retrieve all statistics that the [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) module can read 
+* Testing! Code is new and largely untested in different scenarios.
+* Decode more data. Should be able retrieve all statistics that the [ICAMIB-MOD](https://actronair.com.au/wp-content/uploads/2020/12/9590-3012-ICAMIB-MOD-Installation-and-Comm-Guide.pdf) module can read. Descriptions of the messages found in the `docs` folder.
 * On my ULTIMA system the `AO...` message comes every cycle with all up to date statistics and control modes. On other systems it appears to lack this and `02...` message needs to be used, but only occurs about every 16 seconds. So there will be a lag of status updates for these systems for that amount of time. `01...` messages may also contain most data to augment with `02...` for improved responsiveness. Alternatively there there maybe other packets to be seen. Create an issue for your particular setup, post logs in `ALL` mode and different scenarios e.g. heat, cool, fan speeds, changing zone states.
 
 Open issues or merge requests on any bugs found and improvements.
