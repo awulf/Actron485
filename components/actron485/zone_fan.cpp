@@ -7,7 +7,12 @@ namespace actron485 {
 
 Actron485ZoneFan::Actron485ZoneFan() = default;
 
-void Actron485ZoneFan::update() {
+void Actron485ZoneFan::update_status() {
+    if ((max(command_last_sent_, actron_controller_->dataLastSentTime) + DEBOUNCE_MILLIS) >= millis()) {
+        // debounce our commands
+        return;
+    }
+
     bool has_changed = false;
 
     // Action Mode
@@ -21,9 +26,13 @@ void Actron485ZoneFan::update() {
 }
 
 void Actron485ZoneFan::control(const fan::FanCall &call) {
+    command_last_sent_ = millis();
+
     if (call.get_state().has_value()) {
         bool on = call.get_state().value();
         actron_controller_->setZoneOn(number_, on);
+        this->state = on;
+        this->publish_state();
     }
 }
 

@@ -3,11 +3,13 @@
 #include "Actron485.h"
 #include "actron485_climate.h"
 #include "esphome/components/climate/climate_traits.h"
+#include "Arduino.h"
 
 namespace esphome {
 namespace actron485 {
 
 static const char *const TAG = "actron485.climate";
+static const unsigned long DEBOUNCE_MILLIS = 3000; //3seconds
 
 template<typename T> void update_property(T &property, const T &value, bool &flag) {
     if (property != value) {

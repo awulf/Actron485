@@ -15,7 +15,7 @@ class Actron485ZoneClimate : public climate::Climate, public Component {
         Actron485ZoneClimate();
         void setup() override { }
 
-        void update();
+        void update_status();
 
         void dump_config() override;
 
@@ -27,6 +27,8 @@ class Actron485ZoneClimate : public climate::Climate, public Component {
         int number_;
         bool ultima_adjusts_master_setpoint_;
         Actron485::Controller *actron_controller_ = NULL;
+        
+        unsigned long command_last_sent_ = 0;
 
         /// Override control to change settings of the climate device.
         void control(const climate::ClimateCall &call) override;

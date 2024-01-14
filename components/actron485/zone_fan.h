@@ -15,7 +15,7 @@ class Actron485ZoneFan : public fan::Fan, public Component {
         Actron485ZoneFan();
         void setup() override;
 
-        void update();
+        void update_status();
 
         void dump_config() override;
         float get_setup_priority() const override { return 0; }
@@ -30,6 +30,8 @@ class Actron485ZoneFan : public fan::Fan, public Component {
 
         int number_;
         Actron485::Controller *actron_controller_ = NULL;
+        
+        unsigned long command_last_sent_ = 0;
 };
 
 }

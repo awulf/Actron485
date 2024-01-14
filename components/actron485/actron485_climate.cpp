@@ -115,9 +115,14 @@ void Actron485Climate::add_ultima_zone(int number, Actron485ZoneClimate *climate
 }
 
 void Actron485Climate::update_status() {
-    if (last_command_sent_time_ >= actron_controller.statusLastReceivedTime) {
+    if (actron_controller.dataLastSentTime >= actron_controller.statusLastReceivedTime) {
         // Don't check until we received a new status message after sending a command
         // to debounce status changes 
+        return;
+    }
+
+    if ((max(command_last_sent_, actron_controller.dataLastSentTime) + DEBOUNCE_MILLIS) >= millis()) {
+        // debounce our commands
         return;
     }
 
@@ -152,32 +157,40 @@ void Actron485Climate::update_status() {
     // Zone updates
     for (int z=0; z<8; z++) {
         if (zones_[z]) {
-            zones_[z]->update();
+            zones_[z]->update_status();
         }
         if (zone_climates_[z]) {
-            zone_climates_[z]->update();
+            zone_climates_[z]->update_status();
         }
     }
 }
 
 void Actron485Climate::control(const climate::ClimateCall &call) {
+    command_last_sent_ = millis();
+
     if (call.get_mode().has_value()) {
         Actron485::OperatingMode operating_mode = Converter::to_actron_operating_mode(call.get_mode().value());
         actron_controller.setOperatingMode(operating_mode);
+        this->mode = call.get_mode().value();
     }
     if (call.get_target_temperature().has_value()) {
         actron_controller.setMasterSetpoint(call.get_target_temperature().value());
+        this->target_temperature = call.get_target_temperature().value();
     }
     if (call.get_custom_preset().has_value()) {
         bool continuous_mode = Converter::to_continuous_mode(call.get_custom_preset().value());
         if (actron_controller.getContinuousFanMode() != continuous_mode) {
             actron_controller.setContinuousFanMode(continuous_mode);
         }
+        this->set_custom_preset_(call.get_custom_preset().value());
     }
     if (call.get_fan_mode().has_value()) {
         Actron485::FanMode fan_mode = Converter::to_actron_fan_mode(call.get_fan_mode().value());
         actron_controller.setFanSpeed(fan_mode);
+        this->fan_mode = call.get_fan_mode().value();
     }
+
+    this->publish_state();
 }
 
 climate::ClimateTraits Actron485Climate::traits() {

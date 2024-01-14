@@ -288,7 +288,7 @@ namespace Actron485 {
         }
 
         if (send > 0) {
-            _lastCommandSentTime = millis();
+            dataLastSentTime = millis();
             serialWrite(true); 
             
             for (int i=0; i<send; i++) {
@@ -345,7 +345,7 @@ namespace Actron485 {
 
             MessageType messageType = MessageType::Unknown;
             
-            if ((now - _lastCommandSentTime) < 50) {
+            if ((now - dataLastSentTime) < 50) {
                 // This will be a response to our command
                 if (printOut) {
                     printOut->println("Response Message Received");

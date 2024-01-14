@@ -35,9 +35,6 @@ class Controller {
     /// @brief system millis when there was a pause in receiving, a time when sending can occur
     unsigned long _lastQuietPeriodDetectedTime;
 
-    /// @brief system millis when the last command was sent
-    unsigned long _lastCommandSentTime;
-
     /// @brief Bring up/down the serial write enable pin
     /// @param enable 
     void serialWrite(bool enable);
@@ -118,6 +115,8 @@ public:
 
     /// @brief system millis when data was last received
     unsigned long dataLastReceivedTime;
+    /// @brief system millis when data was last sent
+    unsigned long dataLastSentTime;
     /// @brief system millis when the last status message arrived (useful for comparing against a command sent time for updates)
     unsigned long statusLastReceivedTime;
 
