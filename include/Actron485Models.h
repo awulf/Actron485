@@ -82,7 +82,7 @@ struct ZoneToMasterMessage {
     /// @param data to write to, 5 bytes long
     void generate(uint8_t data[messageLength]);
 
-    /// @brief Given the raw encoded value converts to °C as master would interpet
+    /// @brief Given the raw encoded value converts to °C as master would interpret
     double zoneTempFromMaster(int16_t rawValue);
 
     /// @brief Given the the temperature returns the encoded value for master controller
