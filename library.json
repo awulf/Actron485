@@ -1,6 +1,6 @@
 {
     "name": "Actron485",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "PlatformIO library to control some ducted Actron Air Conditioners directly via the RS485 bus",
     "keywords": "actron",
     "repository":
