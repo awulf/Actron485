@@ -118,6 +118,9 @@ climate:
         name: Bedroom 3
 ```
 
+#### Working Card Layout Example (Ultima System)
+![Example wiring photo](./assets/home-assistant-card-example.png "Example Card Layout")
+
 ## Notes
 * One command per cycle can be sent (~1s per cycle). Different commands are stored and sent out one by one at the end of a cycle. E.g. setting 8 individual zone temperatures, takes 8 seconds to complete.
 * If a command is scheduled to be sent out, but in the mean time another command of the same type is set, the original command will be ignored. E.g. `turn system off` command is scheduled, but before it has time to be sent a `turn system on` command is scheduled, it will replace the off command.
