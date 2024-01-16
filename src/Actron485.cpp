@@ -763,7 +763,7 @@ namespace Actron485 {
                 if (temperature<minAllowed) {
                     diff = minAllowed-temperature;
                 } else if (temperature>maxAllowed) {
-                    diff = temperature-maxAllowed;
+                    diff = maxAllowed-temperature;
                 }
                 // If the difference is not 0 adjust
                 if (diff != 0) {
