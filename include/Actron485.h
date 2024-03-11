@@ -215,9 +215,13 @@ public:
     /// @param speed to set from Low, Medium, High, ESP (Auto), Low Cont., Medium Cont., High Cont., ESP (Auto) Cont., 
     void setFanSpeedAbsolute(FanMode fanSpeed);
 
-    /// @brief get the system fan speed
+    /// @brief get the set system fan speed
     /// @returns returns Off, Low, Medium, High, ESP (Auto)
     FanMode getFanSpeed();
+
+    /// @brief get the running system fan speed
+    /// @returns returns Off, Low, Medium, High
+    FanMode getRunningFanSpeed();
 
     /// @brief set continuous fan mode
     /// @param on sets it to on, false to normal mode

@@ -602,6 +602,17 @@ namespace Actron485 {
         return FanMode::Off;
     }
 
+    FanMode Controller::getRunningFanSpeed() {
+        if (stateMessage.initialised == true) {
+            // Read from State Message
+            return stateMessage.runningFanMode;
+        } else if (stateMessage2.initialised == true) {
+            // Read from State 2 Message
+            return stateMessage2.runningFanMode;
+        }
+        return FanMode::Off;
+    }
+
     void Controller::setFanSpeedAbsolute(FanMode fanSpeed) {
         if (!receivingData()) {
             return;

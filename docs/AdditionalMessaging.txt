@@ -63,8 +63,8 @@ eg:
     2 - Fan Mode: 10000 = Low
     3           " 01000 = Medium
     4           " 00100 = High
-    5           " 00001 = ESP
-    6           "     
+    5           " 
+    6 - ESP Fan Mode: 1
     7 - 1 Idle, 0 Active
 06: Zone On/Off State -> Zone 8-1 in 8 bits
 07:
@@ -113,8 +113,8 @@ A0... Status
     2 - Fan Mode: 10000 = Low
     3           " 01000 = Medium
     4           " 00100 = High
-    5           " 00101 = ESP
-    6           "     
+    5           " 
+    6 - ESP Fan Mode: 1
     7 - 1 Idle, 0 Active
 16: Master Temperature (either single wall controller, or average of turned on zones) 
 17: " -> 16bit Value/10.0°C

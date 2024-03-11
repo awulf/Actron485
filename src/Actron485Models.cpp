@@ -554,6 +554,17 @@ void StateMessage::print() {
             break;
         case FanMode::Esp:
             printOut->print("ESP");
+            switch (runningFanMode) {
+                case FanMode::Low:
+                    printOut->print("-Low");
+                    break;
+                case FanMode::Medium:
+                    printOut->print("-Medium");
+                    break;
+                case FanMode::High:
+                    printOut->print("-High");
+                    break;
+            }
             break;
     }
     if (continuousFan) {
@@ -593,24 +604,26 @@ void StateMessage::parse(uint8_t data[StateMessage::stateMessageLength]) {
 
     temperature = ((double) (((uint16_t)data[16] << 8) | data[17])) / 10.0;
     
-    uint8_t fanModeRaw = (data[15] & 0b111110) >> 1;
+    uint8_t fanModeRaw = (data[15] & 0b111100) >> 2;
     switch (fanModeRaw) {
-        case 0b00000:
-            fanMode = FanMode::Off;
+        case 0b0000:
+            runningFanMode = FanMode::Off;
             break;
-        case 0b10000:
-            fanMode = FanMode::Low;
+        case 0b1000:
+            runningFanMode = FanMode::Low;
             break;
-        case 0b01000:
-            fanMode = FanMode::Medium;
+        case 0b0100:
+            runningFanMode = FanMode::Medium;
             break;
-        case 0b00100:
-            fanMode = FanMode::High;
+        case 0b0010:
+            runningFanMode = FanMode::High;
             break;
-        case 0b00101:
-        case 0b00001:
-            fanMode = FanMode::Esp;
-            break;
+    }
+    
+    if ((data[15] & 0b10) == 0b10) {
+        fanMode = FanMode::Esp;
+    } else {
+        fanMode = runningFanMode;
     }
 
     continuousFan = (data[15] & 0b10000000) == 0b10000000;
@@ -705,6 +718,17 @@ void StateMessage2::print() {
             break;
         case FanMode::Esp:
             printOut->print("ESP");
+            switch (runningFanMode) {
+                case FanMode::Low:
+                    printOut->print("-Low");
+                    break;
+                case FanMode::Medium:
+                    printOut->print("-Medium");
+                    break;
+                case FanMode::High:
+                    printOut->print("-High");
+                    break;
+            }
             break;
     }
     if (continuousFan) {
@@ -743,23 +767,26 @@ void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
 
     temperature = ((double) (((uint16_t)data[9] << 8) | data[10])) / 10.0;
     
-    uint8_t fanModeRaw = (data[05] & 0b111110) >> 1;
+    uint8_t fanModeRaw = (data[05] & 0b111100) >> 2;
     switch (fanModeRaw) {
-        case 0b00000:
-            fanMode = FanMode::Off;
+        case 0b0000:
+            runningFanMode = FanMode::Off;
             break;
-        case 0b10000:
-            fanMode = FanMode::Low;
+        case 0b1000:
+            runningFanMode = FanMode::Low;
             break;
-        case 0b01000:
-            fanMode = FanMode::Medium;
+        case 0b0100:
+            runningFanMode = FanMode::Medium;
             break;
-        case 0b00100:
-            fanMode = FanMode::High;
+        case 0b0010:
+            runningFanMode = FanMode::High;
             break;
-        case 0b00001:
-            fanMode = FanMode::Esp;
-            break;
+    }
+    
+    if ((data[05] & 0b10) == 0b10) {
+        fanMode = FanMode::Esp;
+    } else {
+        fanMode = runningFanMode;
     }
 
     continuousFan = (data[5] & 0b10000000) == 0b10000000;

@@ -318,6 +318,8 @@ struct StateMessage {
 
     /// @brief System fan mode (not including continuous mode)
     FanMode fanMode;
+    /// @brief Running fan mode (when in AUTO ESP will show fan speed)
+    FanMode runningFanMode;
     /// @brief True if system is in continuous mode
     bool continuousFan;
     /// @brief True if system fan is running, false if off
@@ -354,6 +356,8 @@ struct StateMessage2 {
 
     /// @brief System fan mode (not including continuous mode)
     FanMode fanMode;
+    /// @brief Running fan mode (when in AUTO ESP will show fan speed)
+    FanMode runningFanMode;
     /// @brief True if system is in continuous mode
     bool continuousFan;
     /// @brief True if system fan is running, false if off
