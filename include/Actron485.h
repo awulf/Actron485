@@ -22,7 +22,7 @@ class Controller {
     bool _sendZoneConfig[8];
 
     /// @brief Buffer size for ingesting serial messages
-    static const size_t _serialBufferSize = 64;
+    static const size_t _serialBufferSize = 256;
     /// @brief Serial Buffer for ingesting
     uint8_t _serialBuffer[_serialBufferSize];
     /// @brief Last message received time
