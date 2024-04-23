@@ -743,9 +743,15 @@ namespace Actron485 {
             return;
         }
 
-        for (int i=0; i<8; i++) {
-            nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : getZoneOn(i+1));
+        if (sendZoneStateCommand) {
+            // Preparing to send previous zone state command, adjust pending message
+            nextZoneStateCommand.zoneOn[zindex(zone)] = on;
+        } else {
+            for (int i=0; i<8; i++) {
+                nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : getZoneOn(i+1));
+            }
         }
+
         sendZoneStateCommand = true;
     }
 
