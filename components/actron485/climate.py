@@ -65,7 +65,7 @@ CONFIG_SCHEMA = cv.All(
     climate.CLIMATE_SCHEMA.extend(
         {
             cv.GenerateID(): cv.declare_id(Actron485Climate),
-            cv.Required(CONF_WRITE_ENABLE_PIN): pins.gpio_output_pin_schema,
+            cv.Optional(CONF_WRITE_ENABLE_PIN): pins.gpio_output_pin_schema,
             cv.Required(CONF_ZONES): cv.All(
                 cv.ensure_list(ZONE_ENTRY_PARAMETER), cv.Length(min=1, max=8)
             ),
@@ -110,8 +110,9 @@ async def to_code(config):
     await uart.register_uart_device(var, config)
     await climate.register_climate(var, config)
     
-    we_pin = await cg.gpio_pin_expression(config[CONF_WRITE_ENABLE_PIN])
-    cg.add(var.set_we_pin(we_pin))
+    if CONF_WRITE_ENABLE_PIN in config:
+        we_pin = await cg.gpio_pin_expression(config[CONF_WRITE_ENABLE_PIN])
+        cg.add(var.set_we_pin(we_pin))
 
     has_esp = config[CONF_ESP_FAN_AVAILABLE]
     cg.add(var.set_has_esp(has_esp))
