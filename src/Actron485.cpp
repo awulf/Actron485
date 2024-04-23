@@ -463,7 +463,7 @@ namespace Actron485 {
         }
 
         // A gap send our message
-        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900) {
+        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900 && (now - dataLastSentTime) > 900) {
             _lastQuietPeriodDetectedTime = now;
             // Reset board comms1 counter
             boardComms1Index = 0;
