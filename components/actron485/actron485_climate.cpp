@@ -49,25 +49,24 @@ void Actron485ZoneFan::setup() {
 }
 
 void Actron485Climate::setup() {
-    // Setup controller if we have the pins and the controller hasn't already been setup
+    uint8_t we_pin = 0;
     if (we_pin_ != NULL) {
-        int we_pin = we_pin_->get_pin();
+        we_pin = we_pin_->get_pin();
         we_pin_->pin_mode(gpio::FLAG_OUTPUT);
-
-        actron_controller.configure(stream_, 25);
-        logStream_ = LogStream();
-        if (logging_mode_ > 0) {
-            actron_controller.configureLogging(&logStream_);
-            switch (logging_mode_) {
-                case 1:
-                    actron_controller.printOutMode = Actron485::PrintOutMode::StatusOnly;
-                    break;
-                case 2:
-                    actron_controller.printOutMode = Actron485::PrintOutMode::ChangedMessages;
-                    break;
-                case 3:
-                    actron_controller.printOutMode = Actron485::PrintOutMode::AllMessages;
-            }
+    }
+    actron_controller.configure(stream_, we_pin);
+    logStream_ = LogStream();
+    if (logging_mode_ > 0) {
+        actron_controller.configureLogging(&logStream_);
+        switch (logging_mode_) {
+            case 1:
+                actron_controller.printOutMode = Actron485::PrintOutMode::StatusOnly;
+                break;
+            case 2:
+                actron_controller.printOutMode = Actron485::PrintOutMode::ChangedMessages;
+                break;
+            case 3:
+                actron_controller.printOutMode = Actron485::PrintOutMode::AllMessages;
         }
     }
 }
