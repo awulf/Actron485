@@ -99,7 +99,7 @@ class Actron485Climate : public climate::Climate, public Component {
         void power_toggle();
 
     protected:
-        InternalGPIOPin *we_pin_;
+        InternalGPIOPin *we_pin_ = NULL;
         UARTStream stream_;
         LogStream logStream_;
         int logging_mode_;
