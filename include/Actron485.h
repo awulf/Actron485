@@ -32,6 +32,9 @@ class Controller {
     /// @brief Index of current sequence being read
     uint8_t _serialBufferIndex = 0;
 
+    /// Keeps track of if a response occurs after a set zone command is sent, so we know if we can discard our snapshot of the zone state
+    bool _sendZoneStateCommandCleared = true;
+
     /// @brief system millis when there was a pause in receiving, a time when sending can occur
     unsigned long _lastQuietPeriodDetectedTime;
 

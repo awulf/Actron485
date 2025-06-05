@@ -288,7 +288,6 @@ namespace Actron485 {
         }
 
         if (send > 0) {
-            dataLastSentTime = millis();
             serialWrite(true); 
             
             for (int i=0; i<send; i++) {
@@ -296,6 +295,7 @@ namespace Actron485 {
             }
 
             serialWrite(false);
+            dataLastSentTime = millis();
         }
         
         return send > 0;
@@ -415,6 +415,11 @@ namespace Actron485 {
                         stateMessage2.parse(_serialBuffer);
                         statusLastReceivedTime = now;
 
+                        if (sendZoneStateCommand == false) {
+                            // Here we can assume we now have the correct zone on/off state
+                            _sendZoneStateCommandCleared = true;
+                        }
+
                         if (printOut && (printAll || (printChangesOnly && changed))) {
                             stateMessage2.print();
                             printOut->println();
@@ -424,6 +429,11 @@ namespace Actron485 {
                         changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
                         stateMessage.parse(_serialBuffer);
                         statusLastReceivedTime = now;
+
+                        if (sendZoneStateCommand == false) {
+                            // Here we can assume we now have the correct zone on/off state
+                            _sendZoneStateCommandCleared = true;
+                        }
 
                         if (printOut && (printAll || (printChangesOnly && changed))) {
                             stateMessage.print();
@@ -462,8 +472,8 @@ namespace Actron485 {
             _serialBufferIndex = 0;
         }
 
-        // A gap send our message
-        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900 && (now - dataLastSentTime) > 900) {
+        // A gap send our message? Rate limit us sending 1 message every 2 seconds
+        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900 && (now - dataLastSentTime) > 1999) {
             _lastQuietPeriodDetectedTime = now;
             // Reset board comms1 counter
             boardComms1Index = 0;
@@ -743,15 +753,17 @@ namespace Actron485 {
             return;
         }
 
-        if (sendZoneStateCommand) {
+        if (sendZoneStateCommand || _sendZoneStateCommandCleared == false) {
             // Preparing to send previous zone state command, adjust pending message
             nextZoneStateCommand.zoneOn[zindex(zone)] = on;
         } else {
+            // No pending change, take a snap shot of the current state, set our zone to the desired state
             for (int i=0; i<8; i++) {
                 nextZoneStateCommand.zoneOn[i] = (i == zindex(zone) ? on : getZoneOn(i+1));
             }
         }
 
+        _sendZoneStateCommandCleared = false;
         sendZoneStateCommand = true;
     }
 
@@ -829,6 +841,7 @@ namespace Actron485 {
             nextMasterToZoneMessage[zindex(zone)] = masterToZoneMessage[zindex(zone)];
             nextMasterToZoneMessage[zindex(zone)].minSetpoint = temperature;
             nextMasterToZoneMessage[zindex(zone)].maxSetpoint = temperature;
+            nextMasterToZoneMessage[zindex(zone)].setpoint = temperature;
             sendMasterToZoneMessage[zindex(zone)] = true;
         }
     }
