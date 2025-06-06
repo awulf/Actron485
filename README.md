@@ -122,7 +122,7 @@ climate:
 ![Example wiring photo](./assets/home-assistant-card-example.png "Example Card Layout")
 
 ## Notes
-* One command per cycle can be sent (~1s per cycle). Different commands are stored and sent out one by one at the end of a cycle. E.g. setting 8 individual zone temperatures, takes 8 seconds to complete.
+* One command per cycle can be sent (~1s per cycle), with a gap of one cycle for subsequent calls. Different commands are stored and sent out one by one at the end of a cycle. E.g. setting 8 individual zone temperatures, takes 8 seconds to complete.
 * If a command is scheduled to be sent out, but in the mean time another command of the same type is set, the original command will be ignored. E.g. `turn system off` command is scheduled, but before it has time to be sent a `turn system on` command is scheduled, it will replace the off command.
 * If another user is pressing buttons on a wall controller while also a message is being sent via this controller, a race condition could occur and one may override the other. E.g. Wall zone 1 is turned on, at the same time zone 2 is turned on in this controller. Zone 1 or 2 may turn off again.
 

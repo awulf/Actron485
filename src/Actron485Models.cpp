@@ -43,8 +43,8 @@ void ZoneToMasterMessage::print() {
         printOut->print(", Temp Offset: ");
         printOut->print(temperature);
 
-    } else if (type == ZoneMessageType::InitZone) {
-        printOut->print(", Init Zone");
+    } else if (type == ZoneMessageType::Inactive) {
+        printOut->print(", Pending or Sensor only Zone, Temperature: ");
         printOut->print(temperature);
     }
 }
@@ -67,17 +67,19 @@ void ZoneToMasterMessage::parse(uint8_t data[5]) {
     }
 
     bool configMessage = (data[2] & 0b00100000) == 0b00100000;
-    bool initMessage = (data[2] & 0b00010000) == 0b00010000;
+    bool inactiveMessage = (data[2] & 0b00010000) == 0b00010000;
     if (configMessage) {
         type = ZoneMessageType::Config;
         
         // Offset temperature
         temperature = (double)((int8_t)data[3]) / 10.0;
-    } else if (initMessage) {
-        type = ZoneMessageType::InitZone;
-
     } else {
-        type = ZoneMessageType::Normal;
+        if (inactiveMessage) {
+            // Uninitialised zone or when zone is a sensor only zone
+            type = ZoneMessageType::Inactive;
+        } else {
+            type = ZoneMessageType::Normal;
+        }
 
         // Two last bits of data[2] are the leading bits for the raw temperature value
         uint8_t leadingBites = data[2] & 0b00000011;
@@ -122,7 +124,7 @@ void ZoneToMasterMessage::generate(uint8_t data[5]) {
         // Byte 5, check/verify byte
         data[4] = data[2] - data[3] - data[1] - (data[0] & 0b1111) - 1;
 
-    }  else if (type == ZoneMessageType::InitZone) {
+    }  else if (type == ZoneMessageType::Inactive) {
         // Byte 3, config bit set to 1
         data[2] = (mode != ZoneMode::Off ? 0b10000000 : 0b0) | (mode == ZoneMode::Open ? 0b01000000 : 0b0) | 0b00010001;
 
