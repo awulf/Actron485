@@ -41,9 +41,9 @@ enum class ZoneMode {
 };
 
 enum class ZoneMessageType {
-    Normal, // Normal controllable zone
-    Config, // Zone is in configuration mode, e.g. to adjust temperature offset
-    Inactive // Zones requesting initialisation or for zones that are sensor only
+    Normal,
+    Config,
+    InitZone
 };
 
 struct ZoneToMasterMessage {

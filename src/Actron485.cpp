@@ -167,7 +167,7 @@ namespace Actron485 {
 
         // If we got a zone message from not us, its probably the master controller
         // asking us to respond
-        if (zoneMessage.type == ZoneMessageType::Inactive) {
+        if (zoneMessage.type == ZoneMessageType::InitZone) {
             sendZoneInitMessage(zoneMessage.zone);
             _sendZoneConfig[zindex(zoneMessage.zone)] = true;
         }
@@ -815,9 +815,9 @@ namespace Actron485 {
         if (!receivingData()) {
             return;
         }
-
+        
         // An uncontrolled zone? Set the master set point as this zone follows it
-        if (zoneMessage[zindex(zone)].type == ZoneMessageType::Inactive) {
+        if (zoneMessage[zindex(zone)].type == ZoneMessageType::InitZone) {
             setMasterSetpoint(temperature);
             return;
         }

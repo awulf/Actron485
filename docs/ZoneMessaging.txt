@@ -96,8 +96,8 @@ Z: C3 31 82 04 85 			1100 0011  0011 0001  1000 0010  0000 0100  1000 0101
     
 16:  8 1 - Zone On: 1 yes, 0 no
 17:    0 - Damper Open Mode: 1 fully open, 0 auto (e.g. double press zone on button to activate)
-18:    0 - Send Config (e.g. temp offset). 1 when sending 0 otherwise, probably important on boot up. Last two bytes used
-19:    0 - Requesting Zone: set to 1 on power up for configuring the wall controller, this message comes from master when it can't see responses from zone wall controller. Also set this way when the zone has a sensor only
+18:    0 - Send Config (e.g. temp offset). 1 when sending 0 otherwise, probably important on bootup. Last two bytes used
+19:    0 - Requesting Zone: set to 1 on power up for configuring the wall controller, this message comes from master when it can't see responses from zone wall controller
 20:  2 0 - ?
 21:    0 - ?
 22:    1 - 2 leading bits making a 10bit signed int, continued in bits 24-31
