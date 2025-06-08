@@ -66,7 +66,7 @@ eg:
     5           " 
     6 - ESP Fan Mode: 1
     7 - 1 Idle, 0 Active
-06: Zone On/Off State -> Zone 8-1 in 8 bits
+06: Zone On/Off State -> Zone 8-1 in 8 bits ** The user set On/Off position, will remain even when zone balancing occurs, but slow to report **
 07:
 08:
 09: Master Temperature (either single wall controller, or average of turned on zones) 
@@ -157,39 +157,37 @@ FE... Unknown
 
 E0... Ultima Status
 00: E0
-01: Zone 1 Temp. -> (-(Int8 Value) / 10) + (Z1 Setpoint - 12.8)
-02: Zone 2 Temp. -> (-(Int8 Value) / 10) + (Z2 Setpoint - 12.8)
-03: Zone 3 Temp. -> (-(Int8 Value) / 10) + (Z3 Setpoint - 12.8)
-04: Zone 4 Temp. -> (-(Int8 Value) / 10) + (Z4 Setpoint - 12.8)
-05: Zone 5 Temp. -> (-(Int8 Value) / 10) + (Z5 Setpoint - 12.8)
-06: Zone 6 Temp. -> (-(Int8 Value) / 10) + (Z6 Setpoint - 12.8)
-07: Zone 7 Temp. -> (-(Int8 Value) / 10) + (Z7 Setpoint - 12.8)
-08: Zone 8 Temp. -> (-(Int8 Value) / 10) + (Z8 Setpoint - 12.8)
+01: Zone 1 Temp. -> (int8 value) < 0: temp = setpoint - ((int8 value)+128)/10.0
+                                else: temp = setpoint + (int8 value)/10.0
+02: Zone 2 Temp. "
+03: Zone 3 Temp. "
+04: Zone 4 Temp. "
+05: Zone 5 Temp. "
+06: Zone 6 Temp. "
+07: Zone 7 Temp. "
+08: Zone 8 Temp. "
     Note: Not accurate when Zone Temp is far from Setpoint. ICAMIB-MOD has the same incorrect readings, so it must read from this.
           E.g. Temp of 14.3°C, Setpoint of 30°C, has temp reading of 17.3°C as the difference is capped by the min/max value of 0x00/0xFF
 09: Zone 1 Setpoint Temp. -> Value/2.0°C
-10: Zone 2 Setpoint Temp. -> Value/2.0°C
-11: Zone 3 Setpoint Temp. -> Value/2.0°C
-12: Zone 4 Setpoint Temp. -> Value/2.0°C
-13: Zone 5 Setpoint Temp. -> Value/2.0°C
-14: Zone 6 Setpoint Temp. -> Value/2.0°C
-15: Zone 7 Setpoint Temp. -> Value/2.0°C
-16: Zone 8 Setpoint Temp. -> Value/2.0°C
+10: Zone 2 Setpoint "
+11: Zone 3 Setpoint "
+12: Zone 4 Setpoint "
+13: Zone 5 Setpoint "
+14: Zone 6 Setpoint "
+15: Zone 7 Setpoint "
+16: Zone 8 Setpoint "
 17: 
 18: 
 19: 
 20: Zone On/Off 8...1
 21: Zone 1 Damper 0 to 20 -> 0 to 100%
-22: Zone 2 Damper 0 to 20 -> 0 to 100%
-23: Zone 3 Damper 0 to 20 -> 0 to 100%
-24: Zone 4 Damper 0 to 20 -> 0 to 100%
-25: Zone 5 Damper 0 to 20 -> 0 to 100%
-26: Zone 6 Damper 0 to 20 -> 0 to 100%
-27: Zone 7 Damper 0 to 20 -> 0 to 100%
-28: Zone 8 Damper 0 to 20 -> 0 to 100%
+22: Zone 2 Damper "
+23: Zone 3 Damper "
+24: Zone 4 Damper "
+25: Zone 5 Damper "
+26: Zone 6 Damper "
+27: Zone 7 Damper "
+28: Zone 8 Damper "
 29:
 30:
 31:
-32:
-
-Note Zone temp readings here can be in accurate when the set point is far from the zone tempr

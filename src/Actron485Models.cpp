@@ -842,9 +842,13 @@ void UltimaState::parse(uint8_t data[StateMessage::stateMessageLength]) {
 
     for (int i=0; i<8; i++) {
         zoneSetpoint[i] = (double)data[9+i] / 2.0;
-
-        int8_t rawZoneTemp = (int8_t)data[1+i];
-        zoneTemperature[i] = (-(rawZoneTemp) / 10.0) + (zoneSetpoint[i] - 12.8);
+        
+        int8_t rawValue = (int8_t)data[1+i];
+        if (rawValue < 0) {
+            zoneTemperature[i] = zoneSetpoint[i] - ((double)rawValue + 128.0)/10.0;
+        } else {
+            zoneTemperature[i] = zoneSetpoint[i] + (double)rawValue / 10.0;
+        }
 
         zoneOn[i] = (data[20] & (1 << i)) >> i;
 
