@@ -28,7 +28,7 @@ enum class MessageType: uint8_t {
     IndoorBoard2 = 0x02, // Infrequently updated indoor board status
     Stat1 = 0xA0, // Unknown
     Stat2 = 0xFE, // Unknown
-    Stat3 = 0xE0 // Unknown
+    UltimaState = 0xE0 // Ultima Status
 };
 
 // Zone Control Messages
@@ -362,6 +362,33 @@ struct StateMessage2 {
     bool continuousFan;
     /// @brief True if system fan is running, false if off
     bool fanActive;
+
+    /// @brief print state to printOut
+    void print();
+
+    /// @brief parse data provided
+    /// @param data to read of 18 bytes
+    void parse(uint8_t data[18]);
+};
+
+/// @brief Less Frequent State Message that should be sent by most Indoor Boards
+struct UltimaState {
+    /// @brief struct has initialised data
+    bool initialised;
+
+    const static uint8_t stateMessageLength = 32;
+
+    /// @brief Temperature readings for zones 1-8 indexed 0-7 in °C
+    double zoneTemperature[8];
+
+    /// @brief Temperature set point for zones 1-8 indexed 0-7 in °C
+    double zoneSetpoint[8];
+
+    /// @brief false if off, true if on, zones 1-8 indexed 0-7
+    bool zoneOn[8];
+
+    /// @brief 0.0-1.0 for 0 to 100% closed to open
+    double zoneDamper[8];
 
     /// @brief print state to printOut
     void print();

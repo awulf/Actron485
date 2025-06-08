@@ -811,6 +811,45 @@ void StateMessage2::parse(uint8_t data[StateMessage::stateMessageLength]) {
             compressorMode = CompressorMode::Unknown;
             break;       
     }
+}
+
+///////////////////////////////////
+// Actron485::UltimaState
+
+
+void UltimaState::print() {
+    if (!printOut) {
+        return;
+    }
+
+    printOut->print("Ultima State: ");
+    printOut->print("Zones 1-8 Temp:SP:On:Damper ");
+    for (int i=0; i<8; i++) {
+        printOut->print(" ");
+        printOut->print(zoneTemperature[i]);
+        printOut->print(":");
+        printOut->print(zoneSetpoint[i]);
+        printOut->print(":");
+        printOut->print(zoneOn[i]);
+        printOut->print(":");
+        printOut->print((int8_t)round(zoneDamper[i]*100.0));
+    }
+
+}
+
+void UltimaState::parse(uint8_t data[StateMessage::stateMessageLength]) {
+    initialised = true;
+
+    for (int i=0; i<8; i++) {
+        zoneSetpoint[i] = (double)data[9+i] / 2.0;
+
+        int8_t rawZoneTemp = (int8_t)data[1+i];
+        zoneTemperature[i] = (-(rawZoneTemp) / 10.0) + (zoneSetpoint[i] - 12.8);
+
+        zoneOn[i] = (data[20] & (1 << i)) >> i;
+
+        zoneDamper[i] = (double)data[21+i] / 20.0;
+    }
 
 }
 

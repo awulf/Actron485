@@ -321,8 +321,8 @@ namespace Actron485 {
             return MessageType::Stat1;
         } else if (firstByte == (uint8_t) MessageType::Stat2) {
             return MessageType::Stat2;
-        } else if (firstByte == (uint8_t) MessageType::Stat3) {
-            return MessageType::Stat3;
+        } else if (firstByte == (uint8_t) MessageType::UltimaState) {
+            return MessageType::UltimaState;
         } else if ((firstByte & (uint8_t) MessageType::ZoneWallController) == (uint8_t) MessageType::ZoneWallController) {
             return MessageType::ZoneWallController;
         } else if ((firstByte & (uint8_t) MessageType::ZoneMasterController) == (uint8_t) MessageType::ZoneMasterController) {
@@ -443,8 +443,14 @@ namespace Actron485 {
                     case MessageType::Stat2:
                         changed = copyBytes(_serialBuffer, stat2Message, stat2MessageLength);
                         break;
-                    case MessageType::Stat3:
-                        changed = copyBytes(_serialBuffer, stat3Message, stat3MessageLength);
+                    case MessageType::UltimaState:
+                        changed = copyBytes(_serialBuffer, ultimaStateMessageRaw, ultimaState.stateMessageLength);
+                        ultimaState.parse(_serialBuffer);
+
+                        if (printOut && (printAll || (printChangesOnly && changed))) {
+                            ultimaState.print();
+                            printOut->println();
+                        }
                         break;
                 }
             }
@@ -861,7 +867,12 @@ namespace Actron485 {
     }
 
     double Controller::getZoneCurrentTemperature(uint8_t zone) {
-        return zoneMessage[zindex(zone)].temperature;
+        if (zoneMessage[zindex(zone)].type == ZoneMessageType::InitZone) {
+            // Sensor only zone or missing controller
+            return ultimaState.zoneTemperature[zindex(zone)];
+        } else {
+            return zoneMessage[zindex(zone)].temperature;
+        }
     }
 
 }

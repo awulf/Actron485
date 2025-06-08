@@ -116,6 +116,9 @@ public:
     /// @brief State of the AC control message (more commonly available in systems, but updates less frequent)
     StateMessage2 stateMessage2;
 
+    /// @brief State of the AC Ultima Controller
+    UltimaState ultimaState;
+
     /// @brief system millis when data was last received
     unsigned long dataLastReceivedTime;
     /// @brief system millis when data was last sent
@@ -172,8 +175,7 @@ public:
     uint8_t stateMessageRaw[StateMessage::stateMessageLength];
     const static uint8_t stat2MessageLength = 19;
     uint8_t stat2Message[19];
-    const static uint8_t stat3MessageLength = 32;
-    uint8_t stat3Message[32];
+    uint8_t ultimaStateMessageRaw[UltimaState::stateMessageLength];
 
     //////////////////////
     /// Convenient functions, that are the typical use for this module

@@ -155,16 +155,18 @@ FE... Unknown
 
 ==============
 
-E0... Unknown
+E0... Ultima Status
 00: E0
-01: 
-02: 
-03: 
-04: 
-05: 
-06: 
-07: 
-08: 
+01: Zone 1 Temp. -> (-(Int8 Value) / 10) + (Z1 Setpoint - 12.8)
+02: Zone 2 Temp. -> (-(Int8 Value) / 10) + (Z2 Setpoint - 12.8)
+03: Zone 3 Temp. -> (-(Int8 Value) / 10) + (Z3 Setpoint - 12.8)
+04: Zone 4 Temp. -> (-(Int8 Value) / 10) + (Z4 Setpoint - 12.8)
+05: Zone 5 Temp. -> (-(Int8 Value) / 10) + (Z5 Setpoint - 12.8)
+06: Zone 6 Temp. -> (-(Int8 Value) / 10) + (Z6 Setpoint - 12.8)
+07: Zone 7 Temp. -> (-(Int8 Value) / 10) + (Z7 Setpoint - 12.8)
+08: Zone 8 Temp. -> (-(Int8 Value) / 10) + (Z8 Setpoint - 12.8)
+    Note: Not accurate when Zone Temp is far from Setpoint. ICAMIB-MOD has the same incorrect readings, so it must read from this.
+          E.g. Temp of 14.3°C, Setpoint of 30°C, has temp reading of 17.3°C as the difference is capped by the min/max value of 0x00/0xFF
 09: Zone 1 Setpoint Temp. -> Value/2.0°C
 10: Zone 2 Setpoint Temp. -> Value/2.0°C
 11: Zone 3 Setpoint Temp. -> Value/2.0°C
@@ -176,17 +178,18 @@ E0... Unknown
 17: 
 18: 
 19: 
-20: 
-21: 
-22: 
-23: 
-24:
-25:
-26:
-27:
-28:
+20: Zone On/Off 8...1
+21: Zone 1 Damper 0 to 20 -> 0 to 100%
+22: Zone 2 Damper 0 to 20 -> 0 to 100%
+23: Zone 3 Damper 0 to 20 -> 0 to 100%
+24: Zone 4 Damper 0 to 20 -> 0 to 100%
+25: Zone 5 Damper 0 to 20 -> 0 to 100%
+26: Zone 6 Damper 0 to 20 -> 0 to 100%
+27: Zone 7 Damper 0 to 20 -> 0 to 100%
+28: Zone 8 Damper 0 to 20 -> 0 to 100%
 29:
 30:
 31:
 32:
 
+Note Zone temp readings here can be in accurate when the set point is far from the zone tempr
