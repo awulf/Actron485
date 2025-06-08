@@ -875,4 +875,14 @@ namespace Actron485 {
         }
     }
 
+    double Controller::getZoneDamperPosition(uint8_t zone) {
+        if (ultimaState.initialised) {
+            return ultimaState.zoneDamperPosition[zindex(zone)];
+        } else if (zoneMessage[zindex(zone)].initialised) {
+            return masterToZoneMessage[zindex(zone)].damperPosition;
+        } else {
+            return (getZoneOn(zone) == true) ? 1.0 : 1.0;
+        }
+    }
+
 }

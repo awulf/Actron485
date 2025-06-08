@@ -312,6 +312,11 @@ public:
     /// @returns temperature in °C
     double getZoneCurrentTemperature(uint8_t zone);
 
+    /// @brief get zone damper position
+    /// @param zone to query
+    /// @returns will vary between 0.0->1.0 (0-100%) for Ultima Systems. 0 or 1 for others.
+    double getZoneDamperPosition(uint8_t zone);
+
 };
 
 }

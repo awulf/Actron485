@@ -388,7 +388,7 @@ struct UltimaState {
     bool zoneOn[8];
 
     /// @brief 0.0-1.0 for 0 to 100% closed to open
-    double zoneDamper[8];
+    double zoneDamperPosition[8];
 
     /// @brief print state to printOut
     void print();

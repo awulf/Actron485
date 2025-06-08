@@ -17,8 +17,6 @@ void Actron485ZoneClimate::update_status() {
     Actron485::MasterToZoneMessage *master = &(actron_controller_->masterToZoneMessage[zindex(number_)]);
     Actron485::ZoneToMasterMessage *zone = &(actron_controller_->zoneMessage[zindex(number_)]);
 
-    bool compressorActive = master->compressorActive;
-
     // Target/Setpoint Temperature
     update_property(this->target_temperature, (float)actron_controller_->getZoneSetpointTemperature(number_), has_changed);
     // Current Temperature
@@ -29,7 +27,9 @@ void Actron485ZoneClimate::update_status() {
     update_property(this->mode, zone_on, has_changed);
 
     // Action Mode
-    auto action = compressorActive ? Converter::to_climate_action(actron_controller_->getCompressorMode(), actron_controller_->getOperatingMode()) : ClimateAction::CLIMATE_ACTION_OFF;
+    float damperPosition = (float)actron_controller_->getZoneDamperPosition(number_);
+
+    auto action = (damperPosition > 0) ? Converter::to_climate_action(actron_controller_->getCompressorMode(), actron_controller_->getOperatingMode()) : ClimateAction::CLIMATE_ACTION_OFF;
     update_property(this->action, action, has_changed);
 
     if (has_changed) {

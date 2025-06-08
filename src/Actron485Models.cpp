@@ -832,7 +832,7 @@ void UltimaState::print() {
         printOut->print(":");
         printOut->print(zoneOn[i]);
         printOut->print(":");
-        printOut->print((int8_t)round(zoneDamper[i]*100.0));
+        printOut->print((int8_t)round(zoneDamperPosition[i]*100.0));
     }
 
 }
@@ -848,7 +848,7 @@ void UltimaState::parse(uint8_t data[StateMessage::stateMessageLength]) {
 
         zoneOn[i] = (data[20] & (1 << i)) >> i;
 
-        zoneDamper[i] = (double)data[21+i] / 20.0;
+        zoneDamperPosition[i] = (double)data[21+i] / 20.0;
     }
 
 }
