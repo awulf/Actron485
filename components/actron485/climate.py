@@ -57,12 +57,10 @@ ZONE_ENTRY_PARAMETER = cv.All(
             cv.Required(CONF_ZONE_NAME): cv.string,
         }
     )
-    # .extend(fan.FAN_SCHEMA)
-    # .extend(climate.CLIMATE_SCHEMA)
 )
 
 CONFIG_SCHEMA = cv.All(
-    climate.CLIMATE_SCHEMA.extend(
+    climate.climate_schema(Actron485Climate).extend(
         {
             cv.GenerateID(): cv.declare_id(Actron485Climate),
             cv.Optional(CONF_WRITE_ENABLE_PIN): pins.gpio_output_pin_schema,
@@ -142,7 +140,7 @@ async def to_code(config):
             fan_id = zone_f.pop(CONF_ZONE_FAN_ID)
             zone_f[CONF_ID] = fan_id
 
-            fanConfig = fan.FAN_SCHEMA(zone_f)
+            fanConfig = fan.fan_schema(Actron485ZoneFan)(zone_f)
             fanConfig[CONF_ID] = fan_id
             
             zoneFan = cg.new_Pvariable(fanConfig[CONF_ID])
@@ -157,7 +155,7 @@ async def to_code(config):
                 zone_c.pop(CONF_ZONE_FAN_ID)
                 zone_c[CONF_ID] = climate_id
 
-                climateConfig = climate.CLIMATE_SCHEMA(zone_c)
+                climateConfig = climate.climate_schema(Actron485ZoneClimate)(zone_c)
                 climateConfig[CONF_ID] = climate_id
 
                 zoneClimate = cg.new_Pvariable(climateConfig[CONF_ID])
