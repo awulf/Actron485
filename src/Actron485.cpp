@@ -301,6 +301,21 @@ namespace Actron485 {
         return send > 0;
     }
 
+    bool Controller::messageLengthCheck(int received, int expected, const char *name) {
+        if (received == expected) {
+            return true;
+        }
+        if (printOut) {
+            printOut->print(name);
+            printOut->print(": Invalid Length of ");
+            printOut->print(received);
+            printOut->print(" received, expected ");
+            printOut->print(expected);
+            printOut->println();
+        }
+        return false;
+    }
+
     ///////////////////////////////////
     // Message type
 
@@ -353,7 +368,7 @@ namespace Actron485 {
 
             } else {
                 messageType = detectActronMessageType(_serialBuffer[0]);
-                
+                uint8_t expectedMessageLength;
                 switch (messageType) {
                     case MessageType::Unknown:
                         if (printOut) {
@@ -383,25 +398,39 @@ namespace Actron485 {
                         }
                         break;
                     case MessageType::ZoneWallController:
+                        expectedMessageLength = zoneMessage[zindex(zone)].messageLength;
+                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Zone Message")) {
+                            break;
+                        }
                         zone = _serialBuffer[0] & 0x0F;
                         if (0 < zone && zone <= 8) {
-                            zoneMessage[zindex(zone)].parse(_serialBuffer);
-                            changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], zoneMessage[zindex(zone)].messageLength);
-                            if (printOut && (printAll || (printChangesOnly && changed))) {
-                                zoneMessage[zindex(zone)].print();
-                                printOut->println();
+                            if (zoneMessage[zindex(zone)].parse(_serialBuffer)) {
+                                changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], expectedMessageLength);
+                                if (printOut && (printAll || (printChangesOnly && changed))) {
+                                    zoneMessage[zindex(zone)].print();
+                                    printOut->println();
+                                }
+                            } else if (printOut) {
+                                printOut->println("Zone Message: Checksum failed");
                             }
                         }
                         break;
                     case MessageType::ZoneMasterController:
+                        expectedMessageLength = masterToZoneMessage[zindex(zone)].messageLength;
+                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Master to Zone")) {
+                            break;
+                        }
                         zone = _serialBuffer[0] & 0x0F;
                         if (0 < zone && zone <= 8) {
-                            masterToZoneMessage[zindex(zone)].parse(_serialBuffer);
-                            changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], masterToZoneMessage[zindex(zone)].messageLength);
+                            if (masterToZoneMessage[zindex(zone)].parse(_serialBuffer)) {
+                                changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], expectedMessageLength);
 
-                            if (printOut && (printAll || (printChangesOnly && changed))) {
-                                masterToZoneMessage[zindex(zone)].print();
-                                printOut->println();
+                                if (printOut && (printAll || (printChangesOnly && changed))) {
+                                    masterToZoneMessage[zindex(zone)].print();
+                                    printOut->println();
+                                }
+                            } else if (printOut) {
+                                printOut->println("Master to Zone: Checksum failed");
                             }
                         }
                         break;
@@ -411,7 +440,11 @@ namespace Actron485 {
                         boardComms1Index = (boardComms1Index + 1)%2;
                         break;
                     case MessageType::IndoorBoard2:
-                        changed = copyBytes(_serialBuffer, stateMessage2Raw, stateMessage2.stateMessageLength);
+                        expectedMessageLength = stateMessage2.stateMessageLength;
+                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "State Message 2")) {
+                            break;
+                        }
+                        changed = copyBytes(_serialBuffer, stateMessage2Raw, expectedMessageLength);
                         stateMessage2.parse(_serialBuffer);
                         statusLastReceivedTime = now;
 
@@ -426,7 +459,11 @@ namespace Actron485 {
                         }
                         break;
                     case MessageType::Stat1:
-                        changed = copyBytes(_serialBuffer, stateMessageRaw, stateMessage.stateMessageLength);
+                        expectedMessageLength = stateMessage.stateMessageLength;
+                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Stat Message 1")) {
+                            break;
+                        }
+                        changed = copyBytes(_serialBuffer, stateMessageRaw, expectedMessageLength);
                         stateMessage.parse(_serialBuffer);
                         statusLastReceivedTime = now;
 
@@ -441,10 +478,18 @@ namespace Actron485 {
                         }
                         break;
                     case MessageType::Stat2:
-                        changed = copyBytes(_serialBuffer, stat2Message, stat2MessageLength);
+                        expectedMessageLength = stat2MessageLength;
+                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Stat Message 2")) {
+                            break;
+                        }
+                        changed = copyBytes(_serialBuffer, stat2Message, expectedMessageLength);
                         break;
                     case MessageType::UltimaState:
-                        changed = copyBytes(_serialBuffer, ultimaStateMessageRaw, ultimaState.stateMessageLength);
+                        expectedMessageLength = ultimaState.stateMessageLength;
+                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Ultima State")) {
+                            break;
+                        }
+                        changed = copyBytes(_serialBuffer, ultimaStateMessageRaw, expectedMessageLength);
                         ultimaState.parse(_serialBuffer);
 
                         if (printOut && (printAll || (printChangesOnly && changed))) {

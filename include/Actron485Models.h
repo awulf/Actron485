@@ -76,7 +76,8 @@ struct ZoneToMasterMessage {
 
     /// @brief parse data provided
     /// @param data to read of 5 bytes
-    void parse(uint8_t data[messageLength]);
+    /// @return true if checksum passed, false otherwise
+    bool parse(uint8_t data[messageLength]);
     
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 5 bytes long
@@ -87,6 +88,9 @@ struct ZoneToMasterMessage {
 
     /// @brief Given the the temperature returns the encoded value for master controller
     int16_t zoneTempToMaster(double temperature);
+
+    /// @brief Checksum calculation for the data
+    uint8_t checksum(uint8_t data[messageLength-1]);
 };
 
 enum class ZoneOperationMode {
@@ -155,11 +159,15 @@ struct MasterToZoneMessage {
 
     /// @brief parse data provided
     /// @param data to read of 7 bytes
-    void parse(uint8_t data[7]);
+    /// @return true if checksum passed, false otherwise
+    bool parse(uint8_t data[7]);
     
     /// @brief generates the data from the variables in this struct
     /// @param data to write to, 5 bytes long
     void generate(uint8_t data[7]);
+
+        /// @brief Checksum calculation for the data
+    uint8_t checksum(uint8_t data[messageLength-1]);
 };
 
 // General AC Commands

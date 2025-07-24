@@ -49,7 +49,11 @@ void ZoneToMasterMessage::print() {
     }
 }
 
-void ZoneToMasterMessage::parse(uint8_t data[5]) {
+bool ZoneToMasterMessage::parse(uint8_t data[5]) {
+    if (checksum(data) != data[4]) {
+        return false;
+    }
+
     initialised = true;
 
     zone = data[0] & 0b00001111;
@@ -89,6 +93,7 @@ void ZoneToMasterMessage::parse(uint8_t data[5]) {
         temperaturePreAdjustment = (250 - rawTemp) * 0.1;
         temperature = zoneTempFromMaster(rawTemp);
     }
+    return true;
 }
 
 void ZoneToMasterMessage::generate(uint8_t data[5]) {
@@ -130,7 +135,7 @@ void ZoneToMasterMessage::generate(uint8_t data[5]) {
         data[3] = 0;
 
         // Byte 5, check/verify byte
-        data[4] = data[2] - (data[2] << 1) - data[3] - data[1] - data[0] - 1;
+        data[4] = checksum(data);
     }
 }
 
@@ -161,6 +166,10 @@ int16_t ZoneToMasterMessage::zoneTempToMaster(double temperature) {
         out = (int16_t) round(250 - temperature * 10);
     }
     return out;
+}
+
+uint8_t ZoneToMasterMessage::checksum(uint8_t data[4]) {
+    return ~(data[0] + data[1] + data[2] + data[3]);
 }
 
 ///////////////////////////////////
@@ -211,7 +220,11 @@ void MasterToZoneMessage::print() {
     }
 }
 
-void MasterToZoneMessage::parse(uint8_t data[7]) {
+bool MasterToZoneMessage::parse(uint8_t data[7]) {
+    if (checksum(data) != data[6]) {
+        return false;
+    }
+
     initialised = true;
 
     zone = data[0] & 0b00001111;
@@ -251,6 +264,7 @@ void MasterToZoneMessage::parse(uint8_t data[7]) {
     } else {
         operationMode = ZoneOperationMode::Cooling;
     }
+    return true;
 }
 
 void MasterToZoneMessage::generate(uint8_t data[7]) {
@@ -275,7 +289,11 @@ void MasterToZoneMessage::generate(uint8_t data[7]) {
     data[5] = (compressorActive ? 0b10000000 : 0b0) | (/*Unknown*/0b0) | ((uint8_t)(maxSetpoint * 2.0)) & 0b00111111;
 
     // Byte 7, check byte
-    data[6] = data[2] - (data[2] << 1) - data[5] - data[4] - data[3] - data[1] - data[0] - 1;
+    data[6] = checksum(data);
+}
+
+uint8_t MasterToZoneMessage::checksum(uint8_t data[6]) {
+    return ~(data[0] + data[1] + data[2] + data[3] + data[4] + data[5]);
 }
 
 ///////////////////////////////////

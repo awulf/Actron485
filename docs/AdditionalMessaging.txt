@@ -129,6 +129,7 @@ A0... Status
 
 8x... Master to Zone Wall (x = zone)
 Cx... Zone Wall to Master (x = zone)
+See ZoneMessaging.txt
 
 ==============
 

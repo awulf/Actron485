@@ -70,6 +70,10 @@ class Controller {
     /// @returns true if a message was sent
     bool sendQueuedCommand();
 
+    /// @brief Message Send Check
+    /// @returns true if message length is as expected, prints error if printing enabled
+    bool messageLengthCheck(int received, int expected, const char *name);
+
 public:
 
     /// @brief initialise controller with serial pins. Supports rx & tx being the same pin if constrained with GPIOs.

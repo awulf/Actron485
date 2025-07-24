@@ -6,7 +6,8 @@
         "string_view": "cpp",
         "algorithm": "cpp",
         "*.tcc": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "cstddef": "cpp"
     },
     "cmake.configureOnOpen": false,
     "cSpell.words": [
