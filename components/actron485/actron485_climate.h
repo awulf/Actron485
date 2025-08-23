@@ -73,6 +73,15 @@ class LogStream : public Stream {
 };
 
 class Actron485Climate : public climate::Climate, public Component {
+
+    private:
+        // For faster serial processing, a special separate faster running task required since ESPHome 2025.7
+        // to process the serial messages, since the Actron messages are timing critical
+        uint32_t serial_received_last_byte_time_ = 0;
+        uint32_t serial_send_attempt_last_time_ = 0;
+        std::vector<uint8_t> serial_receive_buffer_;
+        std::vector<std::vector<uint8_t>> serial_completed_packets_;
+        static void uart_task(void *param);
         
     public:
         Actron485Climate();
@@ -102,6 +111,7 @@ class Actron485Climate : public climate::Climate, public Component {
         InternalGPIOPin *we_pin_ = NULL;
         UARTStream stream_;
         LogStream logStream_;
+        
         int logging_mode_;
         bool has_esp_auto_;
         bool has_ultima_;

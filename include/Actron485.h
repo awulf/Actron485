@@ -20,7 +20,7 @@ class Controller {
 
     /// @brief If true, on next zone message, will send a configuration
     bool _sendZoneConfig[8];
-
+    
     /// @brief Buffer size for ingesting serial messages
     static const size_t _serialBufferSize = 256;
     /// @brief Serial Buffer for ingesting
@@ -140,6 +140,15 @@ public:
 
     /// @brief Must be called with the main run loop
     void loop();
+
+    /// @brief Pass message data to be processed, if passing data down manually, this can be used rather than calling loop
+    /// @param data byte array
+    /// @param length length of byte array
+    void processMessage(uint8_t *data, uint8_t length);
+
+    /// @brief Attempt to send any queued commands, will be rate limited and may not send, this can be used rather than calling loop
+    /// also should only be called during the expected quiet time, otherwise there will be clashes on the 485 bus
+    void attemptToSendQueuedCommand();
 
     //////////////////////
     // Queued Commands awaiting to be sent, when set will send one by one to the controller on each loop,

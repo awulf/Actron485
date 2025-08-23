@@ -48,6 +48,34 @@ void LogStream::flush() {
 void Actron485ZoneFan::setup() {
 }
 
+void Actron485Climate::uart_task(void *param) {
+    Actron485Climate *self = static_cast<Actron485Climate*>(param);
+    
+    while (true) {
+        if (self->stream_.available()) {    
+            // Let ESPHome run it's loop now, serial can build up some buffer
+            vTaskDelay(1); // 1ms delay
+            
+            // Check for timeout (>5ms since last byte means new packet)
+            if (self->serial_received_last_byte_time_ > 0 && (millis() - self->serial_received_last_byte_time_) > 7) {
+                if (!self->serial_receive_buffer_.empty()) {
+                    self->serial_completed_packets_.push_back(self->serial_receive_buffer_);
+                    self->serial_receive_buffer_.clear();
+                }
+            }
+            
+            // Read all available bytes
+            while (self->stream_.available()) {
+                self->serial_receive_buffer_.push_back(self->stream_.read());
+                self->serial_received_last_byte_time_ = millis();
+            }
+        }
+        
+        // Let ESPHome run it's loop now
+        vTaskDelay(1);
+    }
+}
+
 void Actron485Climate::setup() {
     uint8_t we_pin = 0;
     if (we_pin_ != NULL) {
@@ -69,13 +97,33 @@ void Actron485Climate::setup() {
                 actron_controller.printOutMode = Actron485::PrintOutMode::AllMessages;
         }
     }
+    
+    xTaskCreate(uart_task, "uart_task", 2048, this, 10, nullptr);
 }
 
 void Actron485Climate::loop() {
-    actron_controller.loop();
-    
-    if (millis()-counter > 1000) {
-        counter = millis();
+    // Process any complete packets
+    // In the future if ESPHome ever goes being more than 1 core we'll need to add a mutex here
+    // but currently it slows things down unnecessarily
+    for (const std::vector<uint8_t> &packet: serial_completed_packets_) {
+        // Needs to be more than 2 bytes otherwise, it's nothing useful
+        if (packet.size() > 2) {
+            uint8_t *data = const_cast<uint8_t*>(packet.data());
+            actron_controller.processMessage(data, packet.size());
+        }
+    }
+    serial_completed_packets_.clear();
+    unsigned long now = millis();
+    unsigned long last_received = now - serial_received_last_byte_time_;
+    // Has been more than 0.1s since last received, but less than 0.8s, so we don't have a potential clash
+    // but also don't try multiple attempts times in this 1s period
+    if (last_received  > 100 && last_received < 800 && (now - serial_send_attempt_last_time_) > 800) {
+        actron_controller.attemptToSendQueuedCommand();
+        serial_send_attempt_last_time_ = now;
+    }
+
+    if (now-counter > 1000) {
+        counter = now;
         update_status();
     }
 }

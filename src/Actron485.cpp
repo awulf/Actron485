@@ -352,186 +352,14 @@ namespace Actron485 {
         long serialLastReceivedTime = now-_serialBufferReceivedTime;
 
         if (_serialBufferIndex > 0 && serialLastReceivedTime > _serialBufferBreak) {
-            bool printChangesOnly = printOutMode == PrintOutMode::ChangedMessages;
-            bool printAll = (printOutMode == PrintOutMode::AllMessages);
-            bool changed = false;
-
-            uint8_t zone = 0;
-
-            MessageType messageType = MessageType::Unknown;
-            
-            if ((now - dataLastSentTime) < 50) {
-                // This will be a response to our command
-                if (printOut) {
-                    printOut->println("Response Message Received");
-                }
-
-            } else {
-                messageType = detectActronMessageType(_serialBuffer[0]);
-                uint8_t expectedMessageLength;
-                switch (messageType) {
-                    case MessageType::Unknown:
-                        if (printOut) {
-                            printOut->println("Unknown Message received");
-                        }
-                        changed = true;
-                        break;
-                    case MessageType::CommandMasterSetpoint:
-                        // We don't care about this command
-                        break;
-                    case MessageType::CommandFanMode:
-                        // We don't care about this command
-                        break;
-                    case MessageType::CommandOperatingMode:
-                        // We don't care about this command
-                        break;
-                    case MessageType::CommandZoneState:
-                        // We don't care about this command
-                        break;
-                    case MessageType::CustomCommandChangeZoneSetpoint:
-                        {
-                            ZoneSetpointCustomCommand command;
-                            command.parse(_serialBuffer);
-                            if (zoneControlled[zindex(command.zone)]) {
-                                setZoneSetpointTemperature(command.zone, command.temperature, command.adjustMaster);
-                            }
-                        }
-                        break;
-                    case MessageType::ZoneWallController:
-                        expectedMessageLength = zoneMessage[zindex(zone)].messageLength;
-                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Zone Message")) {
-                            break;
-                        }
-                        zone = _serialBuffer[0] & 0x0F;
-                        if (0 < zone && zone <= 8) {
-                            if (zoneMessage[zindex(zone)].parse(_serialBuffer)) {
-                                changed = copyBytes(_serialBuffer, zoneWallMessageRaw[zindex(zone)], expectedMessageLength);
-                                if (printOut && (printAll || (printChangesOnly && changed))) {
-                                    zoneMessage[zindex(zone)].print();
-                                    printOut->println();
-                                }
-                            } else if (printOut) {
-                                printOut->println("Zone Message: Checksum failed");
-                            }
-                        }
-                        break;
-                    case MessageType::ZoneMasterController:
-                        expectedMessageLength = masterToZoneMessage[zindex(zone)].messageLength;
-                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Master to Zone")) {
-                            break;
-                        }
-                        zone = _serialBuffer[0] & 0x0F;
-                        if (0 < zone && zone <= 8) {
-                            if (masterToZoneMessage[zindex(zone)].parse(_serialBuffer)) {
-                                changed = copyBytes(_serialBuffer, zoneMasterMessageRaw[zindex(zone)], expectedMessageLength);
-
-                                if (printOut && (printAll || (printChangesOnly && changed))) {
-                                    masterToZoneMessage[zindex(zone)].print();
-                                    printOut->println();
-                                }
-                            } else if (printOut) {
-                                printOut->println("Master to Zone: Checksum failed");
-                            }
-                        }
-                        break;
-                    case MessageType::IndoorBoard1:
-                        changed = copyBytes(_serialBuffer, boardComms1Message[boardComms1Index], _serialBufferIndex);
-                        boardComms1MessageLength[boardComms1Index] = _serialBufferIndex;
-                        boardComms1Index = (boardComms1Index + 1)%2;
-                        break;
-                    case MessageType::IndoorBoard2:
-                        expectedMessageLength = stateMessage2.stateMessageLength;
-                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "State Message 2")) {
-                            break;
-                        }
-                        changed = copyBytes(_serialBuffer, stateMessage2Raw, expectedMessageLength);
-                        stateMessage2.parse(_serialBuffer);
-                        statusLastReceivedTime = now;
-
-                        if (sendZoneStateCommand == false) {
-                            // Here we can assume we now have the correct zone on/off state
-                            _sendZoneStateCommandCleared = true;
-                        }
-
-                        if (printOut && (printAll || (printChangesOnly && changed))) {
-                            stateMessage2.print();
-                            printOut->println();
-                        }
-                        break;
-                    case MessageType::Stat1:
-                        expectedMessageLength = stateMessage.stateMessageLength;
-                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Stat Message 1")) {
-                            break;
-                        }
-                        changed = copyBytes(_serialBuffer, stateMessageRaw, expectedMessageLength);
-                        stateMessage.parse(_serialBuffer);
-                        statusLastReceivedTime = now;
-
-                        if (sendZoneStateCommand == false) {
-                            // Here we can assume we now have the correct zone on/off state
-                            _sendZoneStateCommandCleared = true;
-                        }
-
-                        if (printOut && (printAll || (printChangesOnly && changed))) {
-                            stateMessage.print();
-                            printOut->println();
-                        }
-                        break;
-                    case MessageType::Stat2:
-                        expectedMessageLength = stat2MessageLength;
-                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Stat Message 2")) {
-                            break;
-                        }
-                        changed = copyBytes(_serialBuffer, stat2Message, expectedMessageLength);
-                        break;
-                    case MessageType::UltimaState:
-                        expectedMessageLength = ultimaState.stateMessageLength;
-                        if (!messageLengthCheck(_serialBufferIndex, expectedMessageLength, "Ultima State")) {
-                            break;
-                        }
-                        changed = copyBytes(_serialBuffer, ultimaStateMessageRaw, expectedMessageLength);
-                        ultimaState.parse(_serialBuffer);
-
-                        if (printOut && (printAll || (printChangesOnly && changed))) {
-                            ultimaState.print();
-                            printOut->println();
-                        }
-                        break;
-                }
-            }
-
-            if (printOut && (printAll || (printChangesOnly && changed))) {
-                printBytes(_serialBuffer, _serialBufferIndex);
-                printOut->println();
-                printOut->println();
-            }
-
-            // We need to process after printing, else the logs appear out of order
-            if (0 < zone && zone <= 8) {
-                switch (messageType) {
-                    case MessageType::ZoneWallController:
-                        processZoneMessage(zoneMessage[zindex(zone)]);
-                        break;
-                    case MessageType::ZoneMasterController:
-                        processMasterMessage(masterToZoneMessage[zindex(zone)]);
-                        break;
-                }
-            }
-
-            dataLastReceivedTime = now;
-
+            processMessage(_serialBuffer, _serialBufferIndex);
             _serialBufferIndex = 0;
         }
 
-        // A gap send our message? Rate limit us sending 1 message every 2 seconds
-        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900 && (now - dataLastSentTime) > 1999) {
+        // A gap send our message?
+        if ((now - dataLastReceivedTime) > 500 && (now - dataLastReceivedTime) < 1000 && (now - _lastQuietPeriodDetectedTime) > 900) {
             _lastQuietPeriodDetectedTime = now;
-            // Reset board comms1 counter
-            boardComms1Index = 0;
-            if (printOut && printOutMode == PrintOutMode::AllMessages) {
-                printOut->println("Time to Send");
-            }
-            sendQueuedCommand();
+            attemptToSendQueuedCommand();
         }
 
         while(_serial->available() > 0 && _serialBufferIndex < _serialBufferSize) {
@@ -539,6 +367,189 @@ namespace Actron485 {
             _serialBuffer[_serialBufferIndex] = byte;
             _serialBufferIndex++;
             _serialBufferReceivedTime = millis();
+        }
+    }
+
+    void Controller::attemptToSendQueuedCommand() {
+        unsigned long now = millis();
+        // Rate limit us sending 1 message every 2 seconds
+        if ((now - dataLastSentTime) > 1999) {
+            // Reset board comms1 counter
+            boardComms1Index = 0;
+            if (printOut && printOutMode == PrintOutMode::AllMessages) {
+                printOut->println("Time to Send");
+            }
+            sendQueuedCommand();
+        }
+    }
+
+    void Controller::processMessage(uint8_t *data, uint8_t length) {
+        unsigned long now = millis();
+        dataLastReceivedTime = now;
+        bool printChangesOnly = printOutMode == PrintOutMode::ChangedMessages;
+        bool printAll = (printOutMode == PrintOutMode::AllMessages);
+        bool changed = false;
+
+        uint8_t zone = 0;
+
+        MessageType messageType = MessageType::Unknown;
+        
+        if ((now - dataLastSentTime) < 50) {
+            // This will be a response to our command
+            if (printOut) {
+                printOut->println("Response Message Received");
+            }
+
+        } else {
+            messageType = detectActronMessageType(data[0]);
+            uint8_t expectedMessageLength;
+            switch (messageType) {
+                case MessageType::Unknown:
+                    if (printOut) {
+                        printOut->println("Unknown Message received");
+                    }
+                    changed = true;
+                    break;
+                case MessageType::CommandMasterSetpoint:
+                    // We don't care about this command
+                    break;
+                case MessageType::CommandFanMode:
+                    // We don't care about this command
+                    break;
+                case MessageType::CommandOperatingMode:
+                    // We don't care about this command
+                    break;
+                case MessageType::CommandZoneState:
+                    // We don't care about this command
+                    break;
+                case MessageType::CustomCommandChangeZoneSetpoint:
+                    {
+                        ZoneSetpointCustomCommand command;
+                        command.parse(data);
+                        if (zoneControlled[zindex(command.zone)]) {
+                            setZoneSetpointTemperature(command.zone, command.temperature, command.adjustMaster);
+                        }
+                    }
+                    break;
+                case MessageType::ZoneWallController:
+                    expectedMessageLength = zoneMessage[zindex(zone)].messageLength;
+                    if (!messageLengthCheck(length, expectedMessageLength, "Zone Message")) {
+                        break;
+                    }
+                    zone = data[0] & 0x0F;
+                    if (0 < zone && zone <= 8) {
+                        if (zoneMessage[zindex(zone)].parse(data)) {
+                            changed = copyBytes(data, zoneWallMessageRaw[zindex(zone)], expectedMessageLength);
+                            if (printOut && (printAll || (printChangesOnly && changed))) {
+                                zoneMessage[zindex(zone)].print();
+                                printOut->println();
+                            }
+                        } else if (printOut) {
+                            printOut->println("Zone Message: Checksum failed");
+                        }
+                    }
+                    break;
+                case MessageType::ZoneMasterController:
+                    expectedMessageLength = masterToZoneMessage[zindex(zone)].messageLength;
+                    if (!messageLengthCheck(length, expectedMessageLength, "Master to Zone")) {
+                        break;
+                    }
+                    zone = data[0] & 0x0F;
+                    if (0 < zone && zone <= 8) {
+                        if (masterToZoneMessage[zindex(zone)].parse(data)) {
+                            changed = copyBytes(data, zoneMasterMessageRaw[zindex(zone)], expectedMessageLength);
+
+                            if (printOut && (printAll || (printChangesOnly && changed))) {
+                                masterToZoneMessage[zindex(zone)].print();
+                                printOut->println();
+                            }
+                        } else if (printOut) {
+                            printOut->println("Master to Zone: Checksum failed");
+                        }
+                    }
+                    break;
+                case MessageType::IndoorBoard1:
+                    changed = copyBytes(data, boardComms1Message[boardComms1Index], length);
+                    boardComms1MessageLength[boardComms1Index] = length;
+                    boardComms1Index = (boardComms1Index + 1)%2;
+                    break;
+                case MessageType::IndoorBoard2:
+                    expectedMessageLength = stateMessage2.stateMessageLength;
+                    if (!messageLengthCheck(length, expectedMessageLength, "State Message 2")) {
+                        break;
+                    }
+                    changed = copyBytes(data, stateMessage2Raw, expectedMessageLength);
+                    stateMessage2.parse(data);
+                    statusLastReceivedTime = now;
+
+                    if (sendZoneStateCommand == false) {
+                        // Here we can assume we now have the correct zone on/off state
+                        _sendZoneStateCommandCleared = true;
+                    }
+
+                    if (printOut && (printAll || (printChangesOnly && changed))) {
+                        stateMessage2.print();
+                        printOut->println();
+                    }
+                    break;
+                case MessageType::Stat1:
+                    expectedMessageLength = stateMessage.stateMessageLength;
+                    if (!messageLengthCheck(length, expectedMessageLength, "Stat Message 1")) {
+                        break;
+                    }
+                    changed = copyBytes(data, stateMessageRaw, expectedMessageLength);
+                    stateMessage.parse(data);
+                    statusLastReceivedTime = now;
+
+                    if (sendZoneStateCommand == false) {
+                        // Here we can assume we now have the correct zone on/off state
+                        _sendZoneStateCommandCleared = true;
+                    }
+
+                    if (printOut && (printAll || (printChangesOnly && changed))) {
+                        stateMessage.print();
+                        printOut->println();
+                    }
+                    break;
+                case MessageType::Stat2:
+                    expectedMessageLength = stat2MessageLength;
+                    if (!messageLengthCheck(length, expectedMessageLength, "Stat Message 2")) {
+                        break;
+                    }
+                    changed = copyBytes(data, stat2Message, expectedMessageLength);
+                    break;
+                case MessageType::UltimaState:
+                    expectedMessageLength = ultimaState.stateMessageLength;
+                    if (!messageLengthCheck(length, expectedMessageLength, "Ultima State")) {
+                        break;
+                    }
+                    changed = copyBytes(data, ultimaStateMessageRaw, expectedMessageLength);
+                    ultimaState.parse(data);
+
+                    if (printOut && (printAll || (printChangesOnly && changed))) {
+                        ultimaState.print();
+                        printOut->println();
+                    }
+                    break;
+            }
+        }
+
+        if (printOut && (printAll || (printChangesOnly && changed))) {
+            printBytes(data, length);
+            printOut->println();
+            printOut->println();
+        }
+
+        // We need to process after printing, else the logs appear out of order
+        if (0 < zone && zone <= 8) {
+            switch (messageType) {
+                case MessageType::ZoneWallController:
+                    processZoneMessage(zoneMessage[zindex(zone)]);
+                    break;
+                case MessageType::ZoneMasterController:
+                    processMasterMessage(masterToZoneMessage[zindex(zone)]);
+                    break;
+            }
         }
     }
 
