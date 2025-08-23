@@ -7,6 +7,11 @@ namespace actron485 {
 Actron485ZoneClimate::Actron485ZoneClimate() = default;
 
 void Actron485ZoneClimate::update_status() {
+    if (actron_controller_->isPendingZoneCommand(number_)) {
+        // If this zone is pending a message to send, wait, to prevent the home assistant UI from bouncing
+        return;
+    }
+
     if ((max(command_last_sent_, actron_controller_->dataLastSentTime) + DEBOUNCE_MILLIS) >= millis()) {
         // debounce our commands
         return;

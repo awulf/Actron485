@@ -162,7 +162,7 @@ void Actron485Climate::add_ultima_zone(int number, Actron485ZoneClimate *climate
 }
 
 void Actron485Climate::update_status() {
-    if (actron_controller.dataLastSentTime >= actron_controller.statusLastReceivedTime) {
+    if (actron_controller.dataLastSentTime >= actron_controller.statusLastReceivedTime || actron_controller.totalPendingMainCommands() > 0) {
         // Don't check until we received a new status message after sending a command
         // to debounce status changes 
         return;

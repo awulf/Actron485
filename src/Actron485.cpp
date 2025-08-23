@@ -219,6 +219,28 @@ namespace Actron485 {
         }
     }
 
+    uint8_t Controller::totalPendingCommands() {
+        uint8_t pending = totalPendingMainCommands();
+        for (int i=0; i<8; i++) {
+            pending += sendMasterToZoneMessage[i];
+        }
+        return pending;
+    }
+
+    uint8_t Controller::totalPendingMainCommands() {
+        uint8_t pending = 0;
+        pending += sendOperatingModeCommand;
+        pending += sendZoneStateCommand;
+        pending += sendFanModeCommand;
+        pending += sendSetpointCommand;
+        pending += sendZoneSetpointCustomCommand;
+        return pending;
+    }
+
+    bool Controller::isPendingZoneCommand(int zone) {
+        return sendMasterToZoneMessage[zindex(zone)];
+    }
+
     bool Controller::sendQueuedCommand() {
         uint8_t data[7];
         int send = 0;

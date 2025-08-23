@@ -197,6 +197,19 @@ public:
     /// @return true if we are receiving fresh data, false otherwise
     bool receivingData();
 
+    /// @brief Number of commands that are pending to send, including zones (Ultima only)
+    /// @return commands to be sent
+    uint8_t totalPendingCommands();
+
+    /// @brief Number of commands that are pending to send for the main controller only
+    /// @return commands to be sent
+    uint8_t totalPendingMainCommands();
+
+    /// @brief If a zone control is pending to be sent (Ultima Only)
+    /// @param zone to check
+    /// @return commands to be sent
+    bool isPendingZoneCommand(int zone); 
+
     // Setup
 
     /// @brief set the specified zone to be controlled by this module
