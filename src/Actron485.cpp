@@ -323,7 +323,7 @@ namespace Actron485 {
         return send > 0;
     }
 
-    bool Controller::messageLengthCheck(int received, int expected, const char *name) {
+    bool Controller::messageLengthCheck(int received, int expected, const char *name, uint8_t *data) {
         if (received == expected) {
             return true;
         }
@@ -333,6 +333,9 @@ namespace Actron485 {
             printOut->print(received);
             printOut->print(" received, expected ");
             printOut->print(expected);
+            printOut->println();
+            printBytes(data, received);
+            printOut->println();
             printOut->println();
         }
         return false;
@@ -455,7 +458,7 @@ namespace Actron485 {
                     break;
                 case MessageType::ZoneWallController:
                     expectedMessageLength = zoneMessage[zindex(zone)].messageLength;
-                    if (!messageLengthCheck(length, expectedMessageLength, "Zone Message")) {
+                    if (!messageLengthCheck(length, expectedMessageLength, "Zone Message", data)) {
                         break;
                     }
                     zone = data[0] & 0x0F;
@@ -473,7 +476,7 @@ namespace Actron485 {
                     break;
                 case MessageType::ZoneMasterController:
                     expectedMessageLength = masterToZoneMessage[zindex(zone)].messageLength;
-                    if (!messageLengthCheck(length, expectedMessageLength, "Master to Zone")) {
+                    if (!messageLengthCheck(length, expectedMessageLength, "Master to Zone", data)) {
                         break;
                     }
                     zone = data[0] & 0x0F;
@@ -497,7 +500,7 @@ namespace Actron485 {
                     break;
                 case MessageType::IndoorBoard2:
                     expectedMessageLength = stateMessage2.stateMessageLength;
-                    if (!messageLengthCheck(length, expectedMessageLength, "State Message 2")) {
+                    if (!messageLengthCheck(length, expectedMessageLength, "State Message 2", data)) {
                         break;
                     }
                     changed = copyBytes(data, stateMessage2Raw, expectedMessageLength);
@@ -516,7 +519,7 @@ namespace Actron485 {
                     break;
                 case MessageType::Stat1:
                     expectedMessageLength = stateMessage.stateMessageLength;
-                    if (!messageLengthCheck(length, expectedMessageLength, "Stat Message 1")) {
+                    if (!messageLengthCheck(length, expectedMessageLength, "Stat Message 1", data)) {
                         break;
                     }
                     changed = copyBytes(data, stateMessageRaw, expectedMessageLength);
@@ -535,14 +538,14 @@ namespace Actron485 {
                     break;
                 case MessageType::Stat2:
                     expectedMessageLength = stat2MessageLength;
-                    if (!messageLengthCheck(length, expectedMessageLength, "Stat Message 2")) {
+                    if (!messageLengthCheck(length, expectedMessageLength, "Stat Message 2", data)) {
                         break;
                     }
                     changed = copyBytes(data, stat2Message, expectedMessageLength);
                     break;
                 case MessageType::UltimaState:
                     expectedMessageLength = ultimaState.stateMessageLength;
-                    if (!messageLengthCheck(length, expectedMessageLength, "Ultima State")) {
+                    if (!messageLengthCheck(length, expectedMessageLength, "Ultima State", data)) {
                         break;
                     }
                     changed = copyBytes(data, ultimaStateMessageRaw, expectedMessageLength);

@@ -72,7 +72,7 @@ class Controller {
 
     /// @brief Message Send Check
     /// @returns true if message length is as expected, prints error if printing enabled
-    bool messageLengthCheck(int received, int expected, const char *name);
+    bool messageLengthCheck(int received, int expected, const char *name, uint8_t *data);
 
 public:
 
