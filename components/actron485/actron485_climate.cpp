@@ -52,27 +52,27 @@ void Actron485Climate::uart_task(void *param) {
     Actron485Climate *self = static_cast<Actron485Climate*>(param);
     
     while (true) {
-        if (self->stream_.available()) {    
-            // Let ESPHome run it's loop now, serial can build up some buffer
-            vTaskDelay(1); // 1ms delay
-            
-            // Check for timeout (>5ms since last byte means new packet)
-            if (self->serial_received_last_byte_time_ > 0 && (millis() - self->serial_received_last_byte_time_) > 7) {
+        // Check for timeout (>8ms since last byte means new packet)
+        bool newPacket = (self->serial_received_last_byte_time_ > 0 && (millis() - self->serial_received_last_byte_time_) > 8);
+
+        if (self->stream_.available()) {             
+            // Been long enough for a new packet?
+            if (newPacket) {
+                // Start a new packet buffer
                 if (!self->serial_receive_buffer_.empty()) {
                     self->serial_completed_packets_.push_back(self->serial_receive_buffer_);
                     self->serial_receive_buffer_.clear();
                 }
             }
             
-            // Read all available bytes
-            while (self->stream_.available()) {
-                self->serial_receive_buffer_.push_back(self->stream_.read());
-                self->serial_received_last_byte_time_ = millis();
-            }
+            // Read to current packet buffer
+            self->serial_receive_buffer_.push_back(self->stream_.read());
+            self->serial_received_last_byte_time_ = millis();
+
+        } else if (newPacket) {
+            // Finished reading the packet? And no new data, let ESPHome do it's thing
+            vTaskDelay(1);
         }
-        
-        // Let ESPHome run it's loop now
-        vTaskDelay(1);
     }
 }
 
@@ -107,7 +107,7 @@ void Actron485Climate::loop() {
     // but currently it slows things down unnecessarily
     for (const std::vector<uint8_t> &packet: serial_completed_packets_) {
         // Needs to be more than 2 bytes otherwise, it's nothing useful
-        if (packet.size() > 2) {
+        if (packet.size() > 1) {
             uint8_t *data = const_cast<uint8_t*>(packet.data());
             actron_controller.processMessage(data, packet.size());
         }
