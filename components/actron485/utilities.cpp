@@ -4,9 +4,6 @@
 namespace esphome {
 namespace actron485 {
 
-const std::string Converter::FAN_STANDARD = "Standard Fan";
-const std::string Converter::FAN_CONTINUOUS = "Continuous Fan";
-
 ClimateMode Converter::to_climate_mode(Actron485::OperatingMode mode) {
     switch (mode) {
         case Actron485::OperatingMode::Off:
@@ -96,7 +93,7 @@ Actron485::FanMode Converter::to_actron_fan_mode(ClimateFanMode mode) {
     return Actron485::FanMode::Off;
 }
 
-const std::string Converter::to_preset(bool continuous_mode) {
+const char* Converter::to_preset(bool continuous_mode) {
     if (continuous_mode) {
         return Converter::FAN_CONTINUOUS;
     } else {
@@ -104,7 +101,7 @@ const std::string Converter::to_preset(bool continuous_mode) {
     }
 }
 
-bool Converter::to_continuous_mode(const std::string preset) {
+bool Converter::to_continuous_mode(const char *preset) {
     return preset == Converter::FAN_CONTINUOUS;
 }
 

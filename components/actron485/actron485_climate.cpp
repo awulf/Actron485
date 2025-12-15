@@ -224,12 +224,12 @@ void Actron485Climate::control(const climate::ClimateCall &call) {
         actron_controller.setMasterSetpoint(call.get_target_temperature().value());
         this->target_temperature = call.get_target_temperature().value();
     }
-    if (call.get_custom_preset().has_value()) {
-        bool continuous_mode = Converter::to_continuous_mode(call.get_custom_preset().value());
+    if (call.has_custom_preset()) {
+        bool continuous_mode = Converter::to_continuous_mode(call.get_custom_preset());
         if (actron_controller.getContinuousFanMode() != continuous_mode) {
             actron_controller.setContinuousFanMode(continuous_mode);
         }
-        this->set_custom_preset_(call.get_custom_preset().value());
+        this->set_custom_preset_(call.get_custom_preset());
     }
     if (call.get_fan_mode().has_value()) {
         Actron485::FanMode fan_mode = Converter::to_actron_fan_mode(call.get_fan_mode().value());
@@ -260,8 +260,10 @@ climate::ClimateTraits Actron485Climate::traits() {
         ClimateFanMode::CLIMATE_FAN_HIGH,
     });
     traits.set_supports_action(true);
-    traits.add_supported_custom_preset(Converter::FAN_STANDARD);
-    traits.add_supported_custom_preset(Converter::FAN_CONTINUOUS);
+    traits.set_supported_custom_presets({
+        Converter::FAN_STANDARD,
+        Converter::FAN_CONTINUOUS
+    });
     if (has_esp_auto_) {
         traits.add_supported_fan_mode(ClimateFanMode::CLIMATE_FAN_AUTO);
     }
