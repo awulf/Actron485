@@ -254,7 +254,7 @@ climate::ClimateTraits Actron485Climate::traits() {
         ClimateMode::CLIMATE_MODE_OFF,
         ClimateMode::CLIMATE_MODE_COOL,
         ClimateMode::CLIMATE_MODE_HEAT,
-        ClimateMode::CLIMATE_MODE_AUTO,
+        ClimateMode::CLIMATE_MODE_HEAT_COOL,
         ClimateMode::CLIMATE_MODE_FAN_ONLY,
     });
     traits.set_supported_fan_modes({

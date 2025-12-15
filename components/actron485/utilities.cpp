@@ -14,7 +14,7 @@ ClimateMode Converter::to_climate_mode(Actron485::OperatingMode mode) {
         case Actron485::OperatingMode::FanOnly:
             return ClimateMode::CLIMATE_MODE_FAN_ONLY;
         case Actron485::OperatingMode::Auto:
-            return ClimateMode::CLIMATE_MODE_AUTO;
+            return ClimateMode::CLIMATE_MODE_HEAT_COOL;
         case Actron485::OperatingMode::Cool:
             return ClimateMode::CLIMATE_MODE_COOL;
         case Actron485::OperatingMode::Heat:
@@ -49,7 +49,7 @@ Actron485::OperatingMode Converter::to_actron_operating_mode(ClimateMode mode) {
     switch (mode) {
         case ClimateMode::CLIMATE_MODE_FAN_ONLY:
             return Actron485::OperatingMode::FanOnly;
-        case ClimateMode::CLIMATE_MODE_AUTO:
+        case ClimateMode::CLIMATE_MODE_HEAT_COOL:
             return Actron485::OperatingMode::Auto;
         case ClimateMode::CLIMATE_MODE_COOL:
             return Actron485::OperatingMode::Cool;

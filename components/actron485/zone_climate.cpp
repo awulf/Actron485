@@ -28,7 +28,7 @@ void Actron485ZoneClimate::update_status() {
     update_property(this->current_temperature, (float)actron_controller_->getZoneCurrentTemperature(number_), has_changed);
 
     // Operating Mode
-    auto zone_on = actron_controller_->getZoneOn(number_) ? ClimateMode::CLIMATE_MODE_AUTO : ClimateMode::CLIMATE_MODE_OFF;
+    auto zone_on = actron_controller_->getZoneOn(number_) ? ClimateMode::CLIMATE_MODE_HEAT_COOL : ClimateMode::CLIMATE_MODE_OFF;
     update_property(this->mode, zone_on, has_changed);
 
     // Action Mode
@@ -49,7 +49,7 @@ void Actron485ZoneClimate::control(const climate::ClimateCall &call) {
     if (call.get_mode().has_value()) {
         bool isOn = call.get_mode().value() != ClimateMode::CLIMATE_MODE_OFF;
         actron_controller_->setZoneOn(number_, isOn);
-        this->mode = isOn ? ClimateMode::CLIMATE_MODE_AUTO : ClimateMode::CLIMATE_MODE_OFF;
+        this->mode = isOn ? ClimateMode::CLIMATE_MODE_HEAT_COOL : ClimateMode::CLIMATE_MODE_OFF;
     }
     if (call.get_target_temperature().has_value()) {
         float target = call.get_target_temperature().value();
@@ -72,7 +72,7 @@ climate::ClimateTraits Actron485ZoneClimate::traits() {
     traits.set_visual_current_temperature_step(0.1);
     traits.set_supported_modes({
         ClimateMode::CLIMATE_MODE_OFF,
-        ClimateMode::CLIMATE_MODE_AUTO,
+        ClimateMode::CLIMATE_MODE_HEAT_COOL,
     });
 
     return traits;
