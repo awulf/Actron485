@@ -62,7 +62,10 @@ void Actron485ZoneClimate::control(const climate::ClimateCall &call) {
 
 climate::ClimateTraits Actron485ZoneClimate::traits() {
     auto traits = climate::ClimateTraits();
-    traits.set_supports_current_temperature(true);
+    traits.add_feature_flags(
+        climate::ClimateFeature::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE |
+        climate::ClimateFeature::CLIMATE_SUPPORTS_ACTION
+    );
     traits.set_visual_min_temperature(16);
     traits.set_visual_max_temperature(30);
     traits.set_visual_temperature_step(0.5);
@@ -71,7 +74,6 @@ climate::ClimateTraits Actron485ZoneClimate::traits() {
         ClimateMode::CLIMATE_MODE_OFF,
         ClimateMode::CLIMATE_MODE_AUTO,
     });
-    traits.set_supports_action(true);
 
     return traits;
 }

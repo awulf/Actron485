@@ -242,7 +242,10 @@ void Actron485Climate::control(const climate::ClimateCall &call) {
 
 climate::ClimateTraits Actron485Climate::traits() {
     auto traits = climate::ClimateTraits();
-    traits.set_supports_current_temperature(true);
+    traits.add_feature_flags(
+        climate::ClimateFeature::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE |
+        climate::ClimateFeature::CLIMATE_SUPPORTS_ACTION
+    );
     traits.set_visual_min_temperature(16);
     traits.set_visual_max_temperature(30);
     traits.set_visual_temperature_step(0.5);
@@ -259,7 +262,6 @@ climate::ClimateTraits Actron485Climate::traits() {
         ClimateFanMode::CLIMATE_FAN_MEDIUM,
         ClimateFanMode::CLIMATE_FAN_HIGH,
     });
-    traits.set_supports_action(true);
     traits.set_supported_custom_presets({
         Converter::FAN_STANDARD,
         Converter::FAN_CONTINUOUS
