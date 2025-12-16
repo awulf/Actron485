@@ -53,7 +53,7 @@ void Actron485Climate::uart_task(void *param) {
     
     while (true) {
         // Check for timeout (>8ms since last byte means new packet)
-        bool newPacket = (self->serial_received_last_byte_time_ > 0 && (millis() - self->serial_received_last_byte_time_) > 8);
+        bool newPacket = (self->serial_received_last_byte_time_ == 0 || (millis() - self->serial_received_last_byte_time_) > 8);
 
         if (self->stream_.available()) {             
             // Been long enough for a new packet?
